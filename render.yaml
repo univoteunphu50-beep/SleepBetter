@@ -1,12 +1,4 @@
 services:
-  # Base de datos PostgreSQL (Render no soporta MySQL nativamente)
-  - type: pserv
-    name: sleepbetter-postgres
-    env: postgresql
-    plan: free
-    ipAllowList: []
-    maxConnections: 100
-
   # Aplicación web SleepBetter
   - type: web
     name: sleepbetter-app
@@ -16,25 +8,5 @@ services:
     buildCommand: docker build -t sleepbetter .
     startCommand: docker run -p $PORT:80 sleepbetter
     envVars:
-      - key: DB_HOST
-        fromDatabase:
-          name: sleepbetter-postgres
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: sleepbetter-postgres
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: sleepbetter-postgres
-          property: database
-      - key: DB_USER
-        fromDatabase:
-          name: sleepbetter-postgres
-          property: username
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: sleepbetter-postgres
-          property: password
       - key: PORT
         value: 10000 
