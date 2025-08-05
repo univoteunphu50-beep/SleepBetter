@@ -32,6 +32,11 @@ if [ -n "$DB_HOST" ]; then
     echo "   Base de datos: $DB_NAME"
     echo "   Usuario: $DB_USER"
     DB_TYPE="postgresql"
+    
+    # Ejecutar script de inicialización de base de datos
+    echo "🔧 Inicializando base de datos PostgreSQL..."
+    php /var/www/html/init_database.php
+    
 elif [ -n "$MYSQL_HOST" ]; then
     echo "✅ Variables de MySQL configuradas:"
     echo "   Host: $MYSQL_HOST"
