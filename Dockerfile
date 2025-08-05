@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libfreetype6-dev \
     libzip-dev \
+    libpq-dev \
     unzip \
     git \
     && rm -rf /var/lib/apt/lists/*
@@ -17,6 +18,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     gd \
     mysqli \
     pdo_mysql \
+    pdo_pgsql \
+    pgsql \
     zip
 
 # Habilitar mod_rewrite para Apache

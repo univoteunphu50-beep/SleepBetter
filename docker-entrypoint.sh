@@ -23,14 +23,36 @@ fi
 
 # Verificar conexión a la base de datos
 echo "🔍 Verificando conexión a la base de datos..."
-if [ -n "$MYSQL_HOST" ]; then
-    echo "✅ Variables de base de datos configuradas:"
+
+# Detectar tipo de base de datos
+if [ -n "$DB_HOST" ]; then
+    echo "✅ Variables de PostgreSQL configuradas:"
+    echo "   Host: $DB_HOST"
+    echo "   Puerto: $DB_PORT"
+    echo "   Base de datos: $DB_NAME"
+    echo "   Usuario: $DB_USER"
+    DB_TYPE="postgresql"
+elif [ -n "$MYSQL_HOST" ]; then
+    echo "✅ Variables de MySQL configuradas:"
     echo "   Host: $MYSQL_HOST"
     echo "   Puerto: $MYSQL_PORT"
     echo "   Base de datos: $MYSQL_DATABASE"
     echo "   Usuario: $MYSQL_USER"
+    DB_TYPE="mysql"
 else
     echo "⚠️  Variables de base de datos no configuradas"
+    DB_TYPE="local"
+fi
+
+echo "📊 Tipo de base de datos detectado: $DB_TYPE"
+
+# Crear archivo de configuración de base de datos si es necesario
+if [ "$DB_TYPE" = "postgresql" ]; then
+    echo "🔧 Configurando para PostgreSQL..."
+    # Aquí podrías agregar lógica para inicializar la base de datos PostgreSQL
+elif [ "$DB_TYPE" = "mysql" ]; then
+    echo "🔧 Configurando para MySQL..."
+    # Aquí podrías agregar lógica para inicializar la base de datos MySQL
 fi
 
 echo "✅ SleepBetter está listo para Render!"
