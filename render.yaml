@@ -6,7 +6,6 @@ services:
     plan: free
     region: oregon
     buildCommand: docker build -t sleepbetter .
-    startCommand: docker run -p $PORT:80 sleepbetter
     envVars:
       - key: PORT
         value: 10000 
