@@ -1,46 +1,55 @@
 
 <?php
-include 'db.php';
+// Archivo: eliminar_producto.php
+// Elimina un producto de la base de datos
 
-if (isset($_GET['id'])) {
+include("../conexion.php");
+include("../db_helper.php");
+
+// Obtener ID del producto (POST o GET)
+$id = null;
+if (isset($_POST['id'])) {
+    $id = intval($_POST['id']);
+} elseif (isset($_GET['id'])) {
     $id = intval($_GET['id']);
-
-    // Buscar el siguiente producto antes de eliminar el actual
-    $res = $conn->query("SELECT id FROM productos WHERE id > $id ORDER BY id ASC LIMIT 1");
-    $siguiente_id = null;
-    if ($res && $row = $res->fetch_assoc()) {
-        $siguiente_id = $row['id'];
-    } else {
-        // Si no hay siguiente, buscar el anterior
-        $res = $conn->query("SELECT id FROM productos WHERE id < $id ORDER BY id DESC LIMIT 1");
-        if ($res && $row = $res->fetch_assoc()) {
-            $siguiente_id = $row['id'];
-        }
-    }
-
-    // Eliminar imagen asociada si existe
-    $res = $conn->query("SELECT imagen FROM productos WHERE id = $id");
-    if ($res && $row = $res->fetch_assoc()) {
-        $imagen = $row['imagen'];
-        if ($imagen && file_exists($imagen)) {
-            unlink($imagen); // Borra el archivo de imagen
-        }
-    }
-
-    // Eliminar producto
-    $stmt = $conn->prepare("DELETE FROM productos WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    if ($stmt->execute()) {
-        $redir = "Location: index.html?mensaje=Producto eliminado&tipo=success";
-        if ($siguiente_id) {
-            $redir .= "&resaltar_id=" . $siguiente_id;
-        }
-        header($redir);
-        exit();
-    } else {
-        echo "Error al eliminar: " . $stmt->error;
-    }
-} else {
-    echo "ID no especificado.";
 }
+
+if (!$id) {
+    echo "ID del producto no especificado.";
+    exit();
+}
+
+try {
+    // Verificar que el producto existe
+    $sql_verificar = "SELECT id, nombre, imagen FROM productos WHERE id = ?";
+    $producto = selectOne($conn, $sql_verificar, [$id]);
+    
+    if (!$producto) {
+        echo "Producto no encontrado.";
+        exit();
+    }
+    
+    // Eliminar imagen asociada si existe
+    if (!empty($producto['imagen'])) {
+        $ruta_imagen = $producto['imagen'];
+        if (file_exists($ruta_imagen)) {
+            unlink($ruta_imagen);
+        }
+    }
+    
+    // Eliminar el producto
+    $sql_eliminar = "DELETE FROM productos WHERE id = ?";
+    $resultado = executeUpdate($conn, $sql_eliminar, [$id]);
+    
+    if ($resultado) {
+        echo "Producto '" . $producto['nombre'] . "' eliminado exitosamente.";
+    } else {
+        echo "Error al eliminar el producto.";
+    }
+    
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
+}
+
+closeConnection($conn);
 ?>

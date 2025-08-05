@@ -146,6 +146,14 @@
       background: #5a6268;
     }
 
+    .btn-danger {
+      background: #dc3545;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
     .search-container {
       margin-bottom: 20px;
       position: relative;
@@ -601,6 +609,9 @@
           <button type="submit" class="btn">
             <i class="fas fa-save"></i> Actualizar Producto
           </button>
+          <button type="button" class="btn btn-danger" onclick="eliminarProducto()">
+            <i class="fas fa-trash"></i> Eliminar Producto
+          </button>
         </form>
       </div>
 
@@ -857,6 +868,42 @@
           document.getElementById("prod-id").value = "1";
           document.getElementById("prod-id").placeholder = "";
         });
+    }
+
+    function eliminarProducto() {
+      const idProducto = document.getElementById("cons-id").value;
+      const nombreProducto = document.getElementById("cons-nombre").value;
+      
+      if (!idProducto) {
+        alert("No hay producto seleccionado para eliminar.");
+        return;
+      }
+      
+      const confirmacion = confirm(`¿Estás seguro de que quieres eliminar el producto "${nombreProducto}"?\n\nEsta acción no se puede deshacer.`);
+      
+      if (confirmacion) {
+        const formData = new FormData();
+        formData.append('id', idProducto);
+        
+        fetch('eliminar_producto.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.text())
+        .then(result => {
+          alert(result);
+          if (result.includes('eliminado') || result.includes('success')) {
+            // Recargar la lista de productos
+            cargarTodosLosProductos();
+            // Limpiar el formulario
+            document.getElementById("product-display").style.display = "none";
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al eliminar el producto: ' + error.message);
+        });
+      }
     }
 
     // Inicializar
