@@ -14,32 +14,25 @@ if ($user['rol'] !== 'admin') {
 header('Content-Type: application/json');
 
 try {
-    // Incluir configuración de base de datos
-    include("db.php");
-    
-    // Conectar a la base de datos
-    $pdo = getDbConnection();
-    
-    // Crear tabla si no existe
-    crearTablaUsuarios($pdo);
-    
-    // Insertar usuario admin si no existe
-    insertarUsuarioAdmin($pdo);
+    // Incluir configuración de base de datos unificada
+    include("../conexion.php");
+    include("../db_helper.php");
     
     // Consultar usuarios
-    $stmt = $pdo->prepare("SELECT id, usuario, nombre, email, rol, activo, fecha_creacion FROM usuarios ORDER BY nombre");
-    $stmt->execute();
-    $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $sql = "SELECT id, nombre, email, rol, fecha_creacion FROM usuarios ORDER BY nombre";
+    $usuarios = selectAll($conn, $sql);
     
     echo json_encode([
         'success' => true,
         'usuarios' => $usuarios
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => 'Error: ' . $e->getMessage()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
+
+closeConnection($conn);
 ?> 

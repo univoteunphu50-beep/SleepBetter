@@ -14,11 +14,9 @@ if ($user['rol'] !== 'admin') {
 header('Content-Type: application/json');
 
 try {
-    // Incluir configuración de base de datos
-    include("db.php");
-    
-    // Conectar a la base de datos
-    $pdo = getDbConnection();
+    // Incluir configuración de base de datos unificada
+    include("../conexion.php");
+    include("../db_helper.php");
     
     // Obtener ID del usuario a eliminar
     $id = $_POST['id'] ?? '';
@@ -29,9 +27,7 @@ try {
     }
     
     // Verificar si el usuario existe
-    $stmt = $pdo->prepare("SELECT id, rol FROM usuarios WHERE id = ?");
-    $stmt->execute([$id]);
-    $usuario = $stmt->fetch();
+    $usuario = selectOne($conn, "SELECT id, rol FROM usuarios WHERE id = ?", [$id]);
     
     if (!$usuario) {
         echo json_encode(['success' => false, 'error' => 'Usuario no encontrado']);
@@ -40,36 +36,36 @@ try {
     
     // Verificar si es el último administrador
     if ($usuario['rol'] === 'admin') {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE rol = 'admin'");
-        $stmt->execute();
-        $totalAdmins = $stmt->fetchColumn();
+        $totalAdmins = selectOne($conn, "SELECT COUNT(*) as total FROM usuarios WHERE rol = 'admin'");
         
-        if ($totalAdmins <= 1) {
+        if ($totalAdmins['total'] <= 1) {
             echo json_encode(['success' => false, 'error' => 'No se puede eliminar el último administrador']);
             exit;
         }
     }
     
     // Eliminar usuario
-    $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = ?");
-    $stmt->execute([$id]);
+    $sql = "DELETE FROM usuarios WHERE id = ?";
+    $affected = executeUpdate($conn, $sql, [$id]);
     
-    if ($stmt->rowCount() > 0) {
+    if ($affected > 0) {
         echo json_encode([
             'success' => true,
             'message' => 'Usuario eliminado exitosamente'
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     } else {
         echo json_encode([
             'success' => false,
             'error' => 'No se pudo eliminar el usuario'
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
     }
     
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => 'Error: ' . $e->getMessage()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
+
+closeConnection($conn);
 ?> 

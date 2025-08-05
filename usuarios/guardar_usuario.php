@@ -14,14 +14,9 @@ if ($user['rol'] !== 'admin') {
 header('Content-Type: application/json');
 
 try {
-    // Incluir configuración de base de datos
-    include("db.php");
-    
-    // Conectar a la base de datos
-    $pdo = getDbConnection();
-    
-    // Crear tabla si no existe
-    crearTablaUsuarios($pdo);
+    // Incluir configuración de base de datos unificada
+    include("../conexion.php");
+    include("../db_helper.php");
     
     // Validar datos requeridos
     $nombre = trim($_POST['nombre'] ?? '');
@@ -49,9 +44,8 @@ try {
     }
     
     // Verificar si el email ya existe
-    $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = ?");
-    $stmt->execute([$email]);
-    if ($stmt->rowCount() > 0) {
+    $usuarioExistente = selectOne($conn, "SELECT id FROM usuarios WHERE email = ?", [$email]);
+    if ($usuarioExistente) {
         echo json_encode(['success' => false, 'error' => 'El email ya está registrado']);
         exit;
     }
@@ -60,33 +54,33 @@ try {
     $usuario = strtolower(str_replace(' ', '', $nombre)) . rand(100, 999);
     
     // Verificar si el usuario ya existe
-    $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = ?");
-    $stmt->execute([$usuario]);
-    while ($stmt->rowCount() > 0) {
+    $usuarioExistente = selectOne($conn, "SELECT id FROM usuarios WHERE nombre = ?", [$usuario]);
+    while ($usuarioExistente) {
         $usuario = strtolower(str_replace(' ', '', $nombre)) . rand(100, 999);
-        $stmt->execute([$usuario]);
+        $usuarioExistente = selectOne($conn, "SELECT id FROM usuarios WHERE nombre = ?", [$usuario]);
     }
     
     // Hash de la contraseña
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
     
     // Insertar nuevo usuario
-    $sql = "INSERT INTO usuarios (usuario, nombre, email, password, rol, activo) VALUES (?, ?, ?, ?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$usuario, $nombre, $email, $password_hash, $rol, $estado]);
+    $sql = "INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)";
+    $params = [$nombre, $email, $password_hash, $rol];
     
-    $id = $pdo->lastInsertId();
+    $id = executeInsert($conn, $sql, $params);
     
     echo json_encode([
         'success' => true,
         'message' => 'Usuario creado exitosamente',
         'id' => $id
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
         'error' => 'Error: ' . $e->getMessage()
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
+
+closeConnection($conn);
 ?> 
