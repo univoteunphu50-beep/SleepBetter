@@ -135,4 +135,3 @@ function executeInsert($conn, $sql, $params = []) {
     closeStatement($stmt);
     return $lastId;
 }
-?> 

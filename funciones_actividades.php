@@ -224,4 +224,4 @@ function limpiarActividadesAntiguas($dias = 90) {
         error_log("Error en limpiarActividadesAntiguas: " . $e->getMessage());
         return false;
     }
-} 
+}
