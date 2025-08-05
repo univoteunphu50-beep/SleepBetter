@@ -133,6 +133,14 @@
       background: #5a6268;
     }
 
+    .btn-success {
+      background: #28a745;
+    }
+
+    .btn-success:hover {
+      background: #218838;
+    }
+
     .search-container {
       margin-bottom: 20px;
       position: relative;
@@ -357,6 +365,9 @@
         </button>
         <button class="btn btn-secondary" onclick="cargarTodos()">
           <i class="fas fa-refresh"></i> Cargar Todos
+        </button>
+        <button class="btn btn-success" onclick="generarReportePDF()">
+          <i class="fas fa-file-pdf"></i> Reporte PDF
         </button>
       </div>
 
@@ -594,6 +605,11 @@
         cargarTodosLosClientes(); // Recargar después de actualizar
       })
       .catch(err => alert("Error al actualizar: " + err));
+    }
+
+    function generarReportePDF() {
+      console.log('Generando reporte PDF de clientes...');
+      window.open('reporte_clientes_pdf.php', '_blank');
     }
 
     // Inicializar
