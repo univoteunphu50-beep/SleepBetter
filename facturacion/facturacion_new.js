@@ -645,7 +645,9 @@ function ocultarNoResultados() {
 
 // Formatear fecha
 function formatearFecha(fecha) {
+    if (!fecha) return 'Fecha no disponible';
     const date = new Date(fecha);
+    if (isNaN(date.getTime())) return 'Fecha inválida';
     return date.toLocaleDateString('es-ES');
 }
 
@@ -708,18 +710,14 @@ function mostrarModalFactura(factura) {
                 ">×</button>
                 
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <h2 style="color: #2c3e50; margin-bottom: 10px;">Factura #${factura.id}</h2>
-                    <p style="color: #6c757d;">Fecha: ${formatearFecha(factura.fecha)}</p>
+                    <h2 style="color: #2c3e50; margin-bottom: 10px;">Factura #${factura.numero_factura || factura.id}</h2>
+                    <p style="color: #6c757d;">Fecha: ${formatearFecha(factura.fecha_factura)}</p>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                     <div>
                         <h4 style="color: #2c3e50; margin-bottom: 10px;">Datos del Cliente</h4>
-                        <p><strong>Nombre:</strong> ${factura.cliente}</p>
-                        <p><strong>Cédula:</strong> ${factura.cedula}</p>
-                        <p><strong>Teléfono:</strong> ${factura.telefono || 'No especificado'}</p>
-                        <p><strong>Email:</strong> ${factura.email || 'No especificado'}</p>
-                        <p><strong>Dirección:</strong> ${factura.direccion || 'No especificada'}</p>
+                        <p><strong>Nombre:</strong> ${factura.cliente || 'No especificado'}</p>
                     </div>
                     <div>
                         <h4 style="color: #2c3e50; margin-bottom: 10px;">Datos de la Factura</h4>

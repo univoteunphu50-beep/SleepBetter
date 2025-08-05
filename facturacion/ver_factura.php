@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 include("../conexion.php");
+include("../db_helper.php");
 
 $id_factura = $_GET['id'] ?? 0;
 
@@ -11,28 +12,21 @@ if (!$id_factura) {
 
 try {
     // Obtener datos de la factura
-    $stmt = $conn->prepare("
+    $sql_factura = "
         SELECT 
             f.id,
-            f.fecha,
+            f.numero_factura,
+            f.fecha_factura,
             f.vendedor,
+            f.cliente,
             f.subtotal,
             f.itbis,
-            f.total,
-            c.cliente,
-            c.cedula,
-            c.telefono,
-            c.email,
-            c.direccion
+            f.total
         FROM facturas f
-        INNER JOIN clientes c ON f.cedula_cliente = c.cedula
         WHERE f.id = ?
-    ");
+    ";
     
-    $stmt->bind_param("i", $id_factura);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $factura = $result->fetch_assoc();
+    $factura = selectOne($conn, $sql_factura, [$id_factura]);
     
     if (!$factura) {
         echo json_encode(['error' => 'Factura no encontrada']);
@@ -40,34 +34,27 @@ try {
     }
     
     // Obtener productos de la factura
-    $stmt = $conn->prepare("
+    $sql_productos = "
         SELECT 
-            d.nombre,
+            d.nombre_producto as nombre,
             d.precio,
             d.cantidad,
             d.descuento,
-            d.itebis,
-            d.total as total_producto
-        FROM detalle_factura d
-        WHERE d.id_factura = ?
-    ");
+            d.aplicar_itbis as itebis,
+            d.total_producto as total
+        FROM detalles_factura d
+        WHERE d.factura_id = ?
+    ";
     
-    $stmt->bind_param("i", $id_factura);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $productos = [];
-    
-    while ($row = $result->fetch_assoc()) {
-        $productos[] = $row;
-    }
+    $productos = selectAll($conn, $sql_productos, [$id_factura]);
     
     $factura['productos'] = $productos;
     
-    echo json_encode($factura);
+    echo json_encode($factura, JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
-    echo json_encode(['error' => 'Error al obtener la factura: ' . $e->getMessage()]);
+    echo json_encode(['error' => 'Error al obtener la factura: ' . $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }
 
-$conn->close();
+closeConnection($conn);
 ?> 
