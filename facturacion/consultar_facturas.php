@@ -3,51 +3,56 @@
 
 header('Content-Type: application/json');
 include("../conexion.php");
+include("../db_helper.php");
 
-// Filtros
-$cliente = $_GET['cliente'] ?? '';
-$producto = $_GET['producto'] ?? '';
-$fecha = $_GET['fecha'] ?? '';
+try {
+    // Filtros
+    $cliente = $_GET['cliente'] ?? '';
+    $producto = $_GET['producto'] ?? '';
+    $fecha = $_GET['fecha'] ?? '';
 
-// Consulta con JOIN para obtener el nombre real del cliente
-$sql = "
-    SELECT 
-        f.id,
-        f.fecha,
-        c.cliente AS cliente,  -- Aquí se toma el nombre desde la tabla clientes
-        GROUP_CONCAT(p.nombre SEPARATOR ', ') AS productos,
-        f.total
-    FROM facturas f
-    INNER JOIN clientes c ON f.cedula_cliente = c.cedula
-    INNER JOIN detalle_factura d ON f.id = d.id_factura
-    INNER JOIN productos p ON d.id_producto = p.id
-    WHERE 1=1
-";
+    // Consulta con JOIN para obtener el nombre real del cliente
+    $sql = "
+        SELECT 
+            f.id,
+            f.numero_factura,
+            f.fecha_factura,
+            f.cliente,
+            STRING_AGG(p.nombre, ', ') AS productos,
+            f.total
+        FROM facturas f
+        LEFT JOIN detalles_factura d ON f.id = d.factura_id
+        LEFT JOIN productos p ON d.producto_id = p.id
+        WHERE 1=1
+    ";
 
-// Filtros dinámicos
-if (!empty($cliente)) {
-    $cliente = $conn->real_escape_string($cliente);
-    $sql .= " AND f.cedula_cliente LIKE '%$cliente%'";
+    $params = [];
+
+    // Filtros dinámicos
+    if (!empty($cliente)) {
+        $sql .= " AND f.cliente LIKE ?";
+        $params[] = "%$cliente%";
+    }
+
+    if (!empty($producto)) {
+        $sql .= " AND p.nombre LIKE ?";
+        $params[] = "%$producto%";
+    }
+
+    if (!empty($fecha)) {
+        $sql .= " AND DATE(f.fecha_factura) = ?";
+        $params[] = $fecha;
+    }
+
+    $sql .= " GROUP BY f.id, f.numero_factura, f.fecha_factura, f.cliente, f.total ORDER BY f.fecha_factura DESC";
+
+    $facturas = selectAll($conn, $sql, $params);
+
+    echo json_encode($facturas, JSON_UNESCAPED_UNICODE);
+    
+} catch (Exception $e) {
+    echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }
 
-if (!empty($producto)) {
-    $producto = $conn->real_escape_string($producto);
-    $sql .= " AND p.nombre LIKE '%$producto%'";
-}
-
-if (!empty($fecha)) {
-    $fecha = $conn->real_escape_string($fecha);
-    $sql .= " AND DATE(f.fecha) = '$fecha'";
-}
-
-$sql .= " GROUP BY f.id ORDER BY f.fecha DESC";
-
-$result = $conn->query($sql);
-
-$facturas = [];
-while ($row = $result->fetch_assoc()) {
-    $facturas[] = $row;
-}
-
-echo json_encode($facturas);
+closeConnection($conn);
 ?>
