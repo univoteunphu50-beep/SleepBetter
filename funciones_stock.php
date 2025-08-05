@@ -4,6 +4,7 @@
  */
 
 include("conexion.php");
+include("db_helper.php");
 
 /**
  * Registra un movimiento de stock
@@ -13,11 +14,7 @@ function registrarMovimientoStock($id_producto, $tipo_movimiento, $cantidad_movi
     
     try {
         // Obtener stock actual del producto
-        $stmt = $conn->prepare("SELECT stock, nombre FROM productos WHERE id = ?");
-        $stmt->bind_param("i", $id_producto);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $producto = $result->fetch_assoc();
+        $producto = selectOne($conn, "SELECT stock, nombre FROM productos WHERE id = ?", [$id_producto]);
         
         if (!$producto) {
             throw new Exception("Producto no encontrado");
@@ -43,22 +40,22 @@ function registrarMovimientoStock($id_producto, $tipo_movimiento, $cantidad_movi
         }
         
         // Insertar movimiento
-        $stmt = $conn->prepare("
+        $sql = "
             INSERT INTO movimientos_stock 
             (id_producto, tipo_movimiento, cantidad_anterior, cantidad_movimiento, cantidad_nueva, motivo, usuario, id_factura) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->bind_param("isiiissi", $id_producto, $tipo_movimiento, $cantidad_anterior, $cantidad_movimiento, $cantidad_nueva, $motivo, $usuario, $id_factura);
+        ";
+        $params = [$id_producto, $tipo_movimiento, $cantidad_anterior, $cantidad_movimiento, $cantidad_nueva, $motivo, $usuario, $id_factura];
         
-        if (!$stmt->execute()) {
+        if (executeUpdate($conn, $sql, $params) <= 0) {
             throw new Exception("Error al registrar movimiento de stock");
         }
         
         // Actualizar stock del producto
-        $stmt = $conn->prepare("UPDATE productos SET stock = ? WHERE id = ?");
-        $stmt->bind_param("ii", $cantidad_nueva, $id_producto);
+        $sql = "UPDATE productos SET stock = ? WHERE id = ?";
+        $params = [$cantidad_nueva, $id_producto];
         
-        if (!$stmt->execute()) {
+        if (executeUpdate($conn, $sql, $params) <= 0) {
             throw new Exception("Error al actualizar stock del producto");
         }
         
@@ -81,11 +78,7 @@ function verificarAlertaRestock($id_producto, $stock_actual) {
     
     try {
         // Obtener información del producto
-        $stmt = $conn->prepare("SELECT restock, nombre FROM productos WHERE id = ?");
-        $stmt->bind_param("i", $id_producto);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $producto = $result->fetch_assoc();
+        $producto = selectOne($conn, "SELECT restock, nombre FROM productos WHERE id = ?", [$id_producto]);
         
         if (!$producto || $producto['restock'] <= 0) {
             return; // No hay restock configurado
@@ -94,28 +87,25 @@ function verificarAlertaRestock($id_producto, $stock_actual) {
         // Si el stock actual es menor o igual al restock, crear alerta
         if ($stock_actual <= $producto['restock']) {
             // Verificar si ya existe una alerta activa para este producto
-            $stmt = $conn->prepare("SELECT id FROM alertas_restock WHERE id_producto = ? AND estado = 'activa'");
-            $stmt->bind_param("i", $id_producto);
-            $stmt->execute();
+            $alerta_existente = selectOne($conn, "SELECT id FROM alertas_restock WHERE id_producto = ? AND estado = 'activa'", [$id_producto]);
             
-            if ($stmt->get_result()->num_rows == 0) {
+            if (!$alerta_existente) {
                 // Crear nueva alerta
-                $stmt = $conn->prepare("
+                $sql = "
                     INSERT INTO alertas_restock (id_producto, stock_actual, restock_limite) 
                     VALUES (?, ?, ?)
-                ");
-                $stmt->bind_param("iii", $id_producto, $stock_actual, $producto['restock']);
-                $stmt->execute();
+                ";
+                $params = [$id_producto, $stock_actual, $producto['restock']];
+                executeInsert($conn, $sql, $params);
             }
         } else {
             // Si el stock se recuperó, resolver alertas activas
-            $stmt = $conn->prepare("
+            $sql = "
                 UPDATE alertas_restock 
                 SET estado = 'resuelta', fecha_resuelta = CURRENT_TIMESTAMP 
                 WHERE id_producto = ? AND estado = 'activa'
-            ");
-            $stmt->bind_param("i", $id_producto);
-            $stmt->execute();
+            ";
+            executeUpdate($conn, $sql, [$id_producto]);
         }
         
     } catch (Exception $e) {
@@ -130,7 +120,7 @@ function obtenerHistorialMovimientos($id_producto, $limite = 50) {
     global $conn;
     
     try {
-        $stmt = $conn->prepare("
+        $sql = "
             SELECT 
                 ms.*,
                 p.nombre as nombre_producto,
@@ -141,12 +131,10 @@ function obtenerHistorialMovimientos($id_producto, $limite = 50) {
             WHERE ms.id_producto = ?
             ORDER BY ms.fecha_movimiento DESC
             LIMIT ?
-        ");
-        $stmt->bind_param("ii", $id_producto, $limite);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        ";
+        $params = [$id_producto, $limite];
         
-        return $result->fetch_all(MYSQLI_ASSOC);
+        return selectAll($conn, $sql, $params);
         
     } catch (Exception $e) {
         error_log("Error en obtenerHistorialMovimientos: " . $e->getMessage());
@@ -170,14 +158,15 @@ function obtenerAlertasRestock($solo_activas = true) {
             INNER JOIN productos p ON ar.id_producto = p.id
         ";
         
+        $params = [];
+        
         if ($solo_activas) {
             $sql .= " WHERE ar.estado = 'activa'";
         }
         
         $sql .= " ORDER BY ar.fecha_alerta DESC";
         
-        $result = $conn->query($sql);
-        return $result->fetch_all(MYSQLI_ASSOC);
+        return selectAll($conn, $sql, $params);
         
     } catch (Exception $e) {
         error_log("Error en obtenerAlertasRestock: " . $e->getMessage());
@@ -192,14 +181,14 @@ function resolverAlertaRestock($id_alerta, $usuario = '') {
     global $conn;
     
     try {
-        $stmt = $conn->prepare("
+        $sql = "
             UPDATE alertas_restock 
             SET estado = 'resuelta', usuario_resuelve = ?, fecha_resuelta = CURRENT_TIMESTAMP 
             WHERE id = ?
-        ");
-        $stmt->bind_param("si", $usuario, $id_alerta);
+        ";
+        $params = [$usuario, $id_alerta];
         
-        return $stmt->execute();
+        return executeUpdate($conn, $sql, $params) > 0;
         
     } catch (Exception $e) {
         error_log("Error en resolverAlertaRestock: " . $e->getMessage());
@@ -214,14 +203,14 @@ function ignorarAlertaRestock($id_alerta, $usuario = '') {
     global $conn;
     
     try {
-        $stmt = $conn->prepare("
+        $sql = "
             UPDATE alertas_restock 
             SET estado = 'ignorada', usuario_resuelve = ?, fecha_resuelta = CURRENT_TIMESTAMP 
             WHERE id = ?
-        ");
-        $stmt->bind_param("si", $usuario, $id_alerta);
+        ";
+        $params = [$usuario, $id_alerta];
         
-        return $stmt->execute();
+        return executeUpdate($conn, $sql, $params) > 0;
         
     } catch (Exception $e) {
         error_log("Error en ignorarAlertaRestock: " . $e->getMessage());

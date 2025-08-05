@@ -1,5 +1,6 @@
 <?php
 include("../conexion.php");
+include("../db_helper.php");
 
 $nombre = $_POST['nombre'];
 $stock = $_POST['stock'];
@@ -30,15 +31,10 @@ if ($_FILES['imagen']['name'] != "") {
 }
 
 // Construir la consulta SQL dinámicamente para manejar NULL correctamente
-$fecha_fabricacion_sql = $fecha_fabricacion ? "'" . $conn->real_escape_string($fecha_fabricacion) . "'" : "NULL";
-$fecha_expiracion_sql = $fecha_expiracion ? "'" . $conn->real_escape_string($fecha_expiracion) . "'" : "NULL";
-
 $sql = "INSERT INTO productos (nombre, stock, restock, precio, costo, comentarios, palabras_clave, imagen, con_lote, numero_lote, fecha_fabricacion, fecha_expiracion, temperatura_almacenamiento, condiciones_especiales) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, $fecha_fabricacion_sql, $fecha_expiracion_sql, ?, ?)";
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-$stmt = $conn->prepare($sql);
-
-$stmt->bind_param("sddddsssssss", 
+$params = [
     $nombre, 
     $stock, 
     $restock, 
@@ -49,16 +45,17 @@ $stmt->bind_param("sddddsssssss",
     $nombreImagen, 
     $con_lote, 
     $numero_lote, 
+    $fecha_fabricacion, 
+    $fecha_expiracion, 
     $temperatura_almacenamiento, 
     $condiciones_especiales
-);
+];
 
-if ($stmt->execute()) {
+if (executeInsert($conn, $sql, $params)) {
   echo "<script>alert('✅ Producto guardado correctamente'); window.location.href='index.html';</script>";
 } else {
-  echo "Error: " . $stmt->error;
+  echo "Error al guardar el producto";
 }
 
-$stmt->close();
-$conn->close();
+closeConnection($conn);
 ?>

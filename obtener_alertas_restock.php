@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 include("conexion.php");
-include("funciones_stock.php");
+include("db_helper.php");
 
 try {
     $estado = $_GET['estado'] ?? '';
@@ -20,38 +20,26 @@ try {
     ";
     
     $params = [];
-    $types = "";
     
     // Aplicar filtros
     if ($estado) {
         $sql .= " AND ar.estado = ?";
         $params[] = $estado;
-        $types .= "s";
     }
     
     if ($producto) {
         $sql .= " AND ar.id_producto = ?";
         $params[] = $producto;
-        $types .= "i";
     }
     
     if ($fecha) {
         $sql .= " AND DATE(ar.fecha_alerta) = ?";
         $params[] = $fecha;
-        $types .= "s";
     }
     
     $sql .= " ORDER BY ar.fecha_alerta DESC";
     
-    $stmt = $conn->prepare($sql);
-    
-    if ($params) {
-        $stmt->bind_param($types, ...$params);
-    }
-    
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $alertas = $result->fetch_all(MYSQLI_ASSOC);
+    $alertas = selectAll($conn, $sql, $params);
     
     echo json_encode($alertas);
     

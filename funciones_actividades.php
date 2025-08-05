@@ -4,6 +4,7 @@
  */
 
 include("conexion.php");
+include("db_helper.php");
 
 /**
  * Registra una actividad en el sistema
@@ -28,13 +29,13 @@ function registrarActividad($accion, $modulo, $descripcion = '', $datos_anterior
         $datos_anteriores_json = $datos_anteriores ? json_encode($datos_anteriores) : null;
         $datos_nuevos_json = $datos_nuevos ? json_encode($datos_nuevos) : null;
         
-        $stmt = $conn->prepare("
+        $sql = "
             INSERT INTO actividades 
             (usuario_id, usuario_nombre, accion, modulo, descripcion, datos_anteriores, datos_nuevos, ip_address, user_agent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
+        ";
         
-        $stmt->bind_param("issssssss", 
+        $params = [
             $usuario_id, 
             $usuario_nombre, 
             $accion, 
@@ -44,9 +45,9 @@ function registrarActividad($accion, $modulo, $descripcion = '', $datos_anterior
             $datos_nuevos_json, 
             $ip_address, 
             $user_agent
-        );
+        ];
         
-        return $stmt->execute();
+        return executeUpdate($conn, $sql, $params) > 0;
         
     } catch (Exception $e) {
         error_log("Error en registrarActividad: " . $e->getMessage());
@@ -123,37 +124,31 @@ function obtenerActividades($filtros = []) {
         ";
         
         $params = [];
-        $types = "";
         
         // Aplicar filtros
         if (isset($filtros['usuario_id']) && $filtros['usuario_id']) {
             $sql .= " AND a.usuario_id = ?";
             $params[] = $filtros['usuario_id'];
-            $types .= "i";
         }
         
         if (isset($filtros['modulo']) && $filtros['modulo']) {
             $sql .= " AND a.modulo = ?";
             $params[] = $filtros['modulo'];
-            $types .= "s";
         }
         
         if (isset($filtros['accion']) && $filtros['accion']) {
             $sql .= " AND a.accion = ?";
             $params[] = $filtros['accion'];
-            $types .= "s";
         }
         
         if (isset($filtros['fecha_desde']) && $filtros['fecha_desde']) {
             $sql .= " AND DATE(a.fecha_actividad) >= ?";
             $params[] = $filtros['fecha_desde'];
-            $types .= "s";
         }
         
         if (isset($filtros['fecha_hasta']) && $filtros['fecha_hasta']) {
             $sql .= " AND DATE(a.fecha_actividad) <= ?";
             $params[] = $filtros['fecha_hasta'];
-            $types .= "s";
         }
         
         $sql .= " ORDER BY a.fecha_actividad DESC";
@@ -162,16 +157,7 @@ function obtenerActividades($filtros = []) {
             $sql .= " LIMIT " . intval($filtros['limite']);
         }
         
-        $stmt = $conn->prepare($sql);
-        
-        if ($params) {
-            $stmt->bind_param($types, ...$params);
-        }
-        
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        return $result->fetch_all(MYSQLI_ASSOC);
+        return selectAll($conn, $sql, $params);
         
     } catch (Exception $e) {
         error_log("Error en obtenerActividades: " . $e->getMessage());
@@ -200,31 +186,19 @@ function obtenerEstadisticasActividades($filtros = []) {
         ";
         
         $params = [];
-        $types = "";
         
         // Aplicar filtros de fecha si existen
         if (isset($filtros['fecha_desde']) && $filtros['fecha_desde']) {
             $sql .= " AND DATE(fecha_actividad) >= ?";
             $params[] = $filtros['fecha_desde'];
-            $types .= "s";
         }
         
         if (isset($filtros['fecha_hasta']) && $filtros['fecha_hasta']) {
             $sql .= " AND DATE(fecha_actividad) <= ?";
             $params[] = $filtros['fecha_hasta'];
-            $types .= "s";
         }
         
-        $stmt = $conn->prepare($sql);
-        
-        if ($params) {
-            $stmt->bind_param($types, ...$params);
-        }
-        
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        return $result->fetch_assoc();
+        return selectOne($conn, $sql, $params);
         
     } catch (Exception $e) {
         error_log("Error en obtenerEstadisticasActividades: " . $e->getMessage());
@@ -239,14 +213,12 @@ function limpiarActividadesAntiguas($dias = 90) {
     global $conn;
     
     try {
-        $stmt = $conn->prepare("
+        $sql = "
             DELETE FROM actividades 
-            WHERE fecha_actividad < DATE_SUB(NOW(), INTERVAL ? DAY)
-        ");
+            WHERE fecha_actividad < CURRENT_DATE - INTERVAL ? DAY
+        ";
         
-        $stmt->bind_param("i", $dias);
-        
-        return $stmt->execute();
+        return executeUpdate($conn, $sql, [$dias]) > 0;
         
     } catch (Exception $e) {
         error_log("Error en limpiarActividadesAntiguas: " . $e->getMessage());

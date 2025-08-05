@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 include("conexion.php");
-include("funciones_stock.php");
+include("db_helper.php");
 
 try {
     $producto = $_GET['producto'] ?? '';
@@ -21,38 +21,26 @@ try {
     ";
     
     $params = [];
-    $types = "";
     
     // Aplicar filtros
     if ($producto) {
         $sql .= " AND ms.id_producto = ?";
         $params[] = $producto;
-        $types .= "i";
     }
     
     if ($tipo) {
         $sql .= " AND ms.tipo_movimiento = ?";
         $params[] = $tipo;
-        $types .= "s";
     }
     
     if ($fecha) {
         $sql .= " AND DATE(ms.fecha_movimiento) = ?";
         $params[] = $fecha;
-        $types .= "s";
     }
     
     $sql .= " ORDER BY ms.fecha_movimiento DESC LIMIT 100";
     
-    $stmt = $conn->prepare($sql);
-    
-    if ($params) {
-        $stmt->bind_param($types, ...$params);
-    }
-    
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $movimientos = $result->fetch_all(MYSQLI_ASSOC);
+    $movimientos = selectAll($conn, $sql, $params);
     
     echo json_encode($movimientos);
     
