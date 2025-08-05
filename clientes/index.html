@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Clientes - Sleep Better</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header img {
+      width: 150px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .header h1 {
+      color: white;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .tabs {
+      display: flex;
+      background: white;
+      border-radius: 15px;
+      padding: 5px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 15px 20px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      color: #666;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 15px 20px;
+      padding-left: 50px;
+      border: 2px solid #e0e0e0;
+      border-radius: 25px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+    }
+
+    .navigation {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .nav-btn {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .nav-btn:hover {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .client-info {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .client-info h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .no-results i {
+      font-size: 3rem;
+      color: #ddd;
+      margin-bottom: 15px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .results-count {
+      background: #667eea;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .tabs {
+        flex-direction: column;
+      }
+      
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="logo_sleepbetter.jpg" alt="Logo Sleep Better">
+      <h1>Gestión de Clientes</h1>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="mostrarTab('registro', this)">
+        <i class="fas fa-user-plus"></i> Registrar Cliente
+      </button>
+      <button class="tab-btn" onclick="mostrarTab('consulta', this)">
+        <i class="fas fa-search"></i> Consultar Clientes
+      </button>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="registro" class="tab-content active">
+      <form action="guardar_cliente.php" method="POST">
+        <div class="form-group">
+          <label for="cedula">Cédula:</label>
+          <input type="text" id="cedula" name="cedula" maxlength="13" required 
+                 placeholder="000-0000000-0" oninput="formatearCedula(this)" 
+                 onkeydown="validarBackspace(event)">
+        </div>
+
+        <div class="form-group">
+          <label for="nombre">Nombre:</label>
+          <input type="text" id="nombre" name="nombre" required 
+                 placeholder="Nombre completo del cliente">
+        </div>
+
+        <div class="form-group">
+          <label for="telefono">Teléfono:</label>
+          <input type="text" id="telefono" name="telefono" maxlength="12" 
+                 placeholder="809-555-1234" oninput="formatearTelefono(this)" 
+                 onkeydown="validarBackspaceTelefono(event)">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Correo:</label>
+          <input type="email" id="email" name="email" 
+                 placeholder="cliente@email.com">
+        </div>
+
+        <div class="form-group">
+          <label for="direccion">Dirección:</label>
+          <textarea id="direccion" name="direccion" rows="3" 
+                    placeholder="Dirección completa del cliente"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="comentarios">Comentarios:</label>
+          <textarea id="comentarios" name="comentarios" rows="3" 
+                    placeholder="Información adicional del cliente"></textarea>
+        </div>
+
+        <button type="submit" class="btn">
+          <i class="fas fa-save"></i> Guardar Cliente
+        </button>
+      </form>
+    </div>
+
+    <!-- CONSULTA -->
+    <div id="consulta" class="tab-content">
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="busqueda" class="search-input" 
+               placeholder="Buscar por nombre, cédula, teléfono, email..." 
+               oninput="buscarClientes()">
+      </div>
+
+      <div id="results-count" class="results-count" style="display: none;">
+        <i class="fas fa-users"></i> <span id="count-text">0 resultados</span>
+      </div>
+
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Buscando clientes...</p>
+      </div>
+
+      <div id="no-results" class="no-results" style="display: none;">
+        <i class="fas fa-search"></i>
+        <h3>No se encontraron coincidencias</h3>
+        <p>Intenta con otros términos de búsqueda</p>
+      </div>
+
+      <div class="navigation">
+        <button class="nav-btn" onclick="anterior()">
+          <i class="fas fa-chevron-left"></i> Anterior
+        </button>
+        <button class="nav-btn" onclick="siguiente()">
+          Siguiente <i class="fas fa-chevron-right"></i>
+        </button>
+        <button class="btn btn-secondary" onclick="cargarTodos()">
+          <i class="fas fa-refresh"></i> Cargar Todos
+        </button>
+      </div>
+
+      <div id="client-display" class="client-info" style="display: none;">
+        <h3>Información del Cliente</h3>
+        <div class="info-grid">
+          <div class="form-group">
+            <label>Cédula:</label>
+            <input type="text" id="cedulaConsulta" readonly 
+                   oninput="formatearCedula(this)" onkeydown="validarBackspace(event)">
+          </div>
+
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input type="text" id="nombreConsulta">
+          </div>
+
+          <div class="form-group">
+            <label>Teléfono:</label>
+            <input type="text" id="telefonoConsulta" maxlength="12"
+                   oninput="formatearTelefono(this)" onkeydown="validarBackspaceTelefono(event)">
+          </div>
+
+          <div class="form-group">
+            <label>Correo:</label>
+            <input type="email" id="emailConsulta">
+          </div>
+
+          <div class="form-group">
+            <label>Dirección:</label>
+            <textarea id="direccionConsulta" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Comentarios:</label>
+            <textarea id="comentariosConsulta" rows="3"></textarea>
+          </div>
+        </div>
+
+        <button onclick="guardarCambios()" class="btn">
+          <i class="fas fa-save"></i> Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let clientes = [];
+    let clienteActual = 0;
+    let todosLosClientes = [];
+
+    function mostrarTab(tabId, element) {
+      document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      
+      if (element) {
+        element.classList.add("active");
+      }
+      
+      if (tabId === 'consulta') {
+        cargarTodosLosClientes();
+      }
+    }
+
+    function cargarTodosLosClientes() {
+      mostrarLoading();
+      fetch("consulta_clientes.php")
+        .then(res => res.json())
+        .then(data => {
+          todosLosClientes = data;
+          clientes = data;
+          ocultarLoading();
+          mostrarResultados();
+        })
+        .catch(err => {
+          console.error("Error al cargar clientes:", err);
+          ocultarLoading();
+          mostrarNoResultados();
+        });
+    }
+
+    function buscarClientes() {
+      const busqueda = document.getElementById("busqueda").value.trim();
+      
+      if (busqueda.length === 0) {
+        clientes = todosLosClientes;
+        mostrarResultados();
+        return;
+      }
+
+      mostrarLoading();
+      
+      fetch(`buscar_clientes.php?q=${encodeURIComponent(busqueda)}`)
+        .then(res => res.json())
+        .then(data => {
+          clientes = data;
+          ocultarLoading();
+          mostrarResultados();
+        })
+        .catch(err => {
+          console.error("Error en la búsqueda:", err);
+          ocultarLoading();
+          mostrarNoResultados();
+        });
+    }
+
+    function mostrarResultados() {
+      const resultsCount = document.getElementById("results-count");
+      const countText = document.getElementById("count-text");
+      const clientDisplay = document.getElementById("client-display");
+      const noResults = document.getElementById("no-results");
+
+      if (clientes.length === 0) {
+        resultsCount.style.display = "none";
+        clientDisplay.style.display = "none";
+        noResults.style.display = "block";
+        return;
+      }
+
+      resultsCount.style.display = "inline-block";
+      countText.textContent = `${clientes.length} resultado${clientes.length !== 1 ? 's' : ''}`;
+      
+      noResults.style.display = "none";
+      clientDisplay.style.display = "block";
+      
+      clienteActual = 0;
+      cargarCliente();
+    }
+
+    function mostrarLoading() {
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("results-count").style.display = "none";
+      document.getElementById("client-display").style.display = "none";
+      document.getElementById("no-results").style.display = "none";
+    }
+
+    function ocultarLoading() {
+      document.getElementById("loading").style.display = "none";
+    }
+
+    function mostrarNoResultados() {
+      document.getElementById("no-results").style.display = "block";
+      document.getElementById("results-count").style.display = "none";
+      document.getElementById("client-display").style.display = "none";
+    }
+
+    function cargarCliente() {
+      if (clientes.length > 0) {
+        const c = clientes[clienteActual];
+        document.getElementById("cedulaConsulta").value = c.cedula || '';
+        document.getElementById("nombreConsulta").value = c.cliente || '';
+        document.getElementById("telefonoConsulta").value = c.telefono || '';
+        document.getElementById("emailConsulta").value = c.email || '';
+        document.getElementById("direccionConsulta").value = c.direccion || '';
+        document.getElementById("comentariosConsulta").value = c.comentarios || '';
+      }
+    }
+
+    function siguiente() {
+      if (clienteActual < clientes.length - 1) {
+        clienteActual++;
+        cargarCliente();
+      }
+    }
+
+    function anterior() {
+      if (clienteActual > 0) {
+        clienteActual--;
+        cargarCliente();
+      }
+    }
+
+    function cargarTodos() {
+      document.getElementById("busqueda").value = '';
+      cargarTodosLosClientes();
+    }
+
+    function formatearCedula(input) {
+      let value = input.value.replace(/\D/g, '');
+      if (value.length > 11) value = value.slice(0, 11);
+      let formatted = '';
+      if (value.length > 0) formatted += value.substring(0, 3);
+      if (value.length > 3) formatted += '-' + value.substring(3, 10);
+      if (value.length > 10) formatted += '-' + value.substring(10, 11);
+      input.value = formatted;
+    }
+
+    function formatearTelefono(input) {
+      let value = input.value.replace(/\D/g, '');
+      if (value.length > 10) value = value.slice(0, 10);
+      let formatted = '';
+      if (value.length > 0) formatted += value.substring(0, 3);
+      if (value.length > 3) formatted += '-' + value.substring(3, 6);
+      if (value.length > 6) formatted += '-' + value.substring(6, 10);
+      input.value = formatted;
+    }
+
+    function validarBackspace(e) {
+      const input = e.target;
+      const pos = input.selectionStart;
+      if (e.key === "Backspace" && (pos === 4 || pos === 11) && input.value.charAt(pos - 1) === '-') {
+        e.preventDefault();
+        input.setSelectionRange(pos - 1, pos - 1);
+      }
+    }
+
+    function validarBackspaceTelefono(e) {
+      const input = e.target;
+      const pos = input.selectionStart;
+      if (e.key === "Backspace" && (pos === 4 || pos === 8) && input.value.charAt(pos - 1) === '-') {
+        e.preventDefault();
+        input.setSelectionRange(pos - 1, pos - 1);
+      }
+    }
+
+    function guardarCambios() {
+      const datos = {
+        cedula: document.getElementById("cedulaConsulta").value,
+        nombre: document.getElementById("nombreConsulta").value,
+        telefono: document.getElementById("telefonoConsulta").value,
+        email: document.getElementById("emailConsulta").value,
+        direccion: document.getElementById("direccionConsulta").value,
+        comentarios: document.getElementById("comentariosConsulta").value
+      };
+
+      fetch("actualizar_cliente.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      })
+      .then(res => res.text())
+      .then(msg => {
+        alert(msg);
+        cargarTodosLosClientes(); // Recargar después de actualizar
+      })
+      .catch(err => alert("Error al actualizar: " + err));
+    }
+
+    // Inicializar
+    window.onload = function() {
+      mostrarTab('registro');
+    };
+  </script>
+</body>
+</html>
+

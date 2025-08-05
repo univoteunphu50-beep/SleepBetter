@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Productos - Sleep Better</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .header img {
+      width: 150px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .header h1 {
+      color: white;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .tabs {
+      display: flex;
+      background: white;
+      border-radius: 15px;
+      padding: 5px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 15px 20px;
+      border: none;
+      background: transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      color: #666;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .tab-content {
+      display: none;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group input[readonly] {
+      background-color: #f8f9fa;
+      color: #666;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .search-container {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 15px 20px;
+      padding-left: 50px;
+      border: 2px solid #e0e0e0;
+      border-radius: 25px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+    }
+
+    .navigation {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .nav-btn:hover {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .product-info {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .product-info h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .no-results i {
+      font-size: 3rem;
+      color: #ddd;
+      margin-bottom: 15px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .results-count {
+      background: #667eea;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    .image-preview {
+      width: 180px;
+      height: 200px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      object-fit: cover;
+      margin-top: 10px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+      width: auto;
+      margin: 0;
+    }
+
+    .export-links {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .export-links a {
+      background: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .export-links a:hover {
+      background: #218838;
+      transform: translateY(-2px);
+    }
+
+    .export-links a:last-child {
+      background: #17a2b8;
+    }
+
+    .export-links a:last-child:hover {
+      background: #138496;
+    }
+
+    .lote-section {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border: 2px solid #dee2e6;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    .lote-section h4 {
+      color: #495057;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .lote-section h4 i {
+      color: #667eea;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .tabs {
+        flex-direction: column;
+      }
+      
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .navigation {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="logo_sleepbetter.jpg" alt="Logo Sleep Better">
+      <h1>Gestión de Productos</h1>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="mostrarTab('registro', this)">
+        <i class="fas fa-plus-circle"></i> Registrar Producto
+      </button>
+      <button class="tab-btn" onclick="mostrarTab('consulta', this)">
+        <i class="fas fa-search"></i> Consultar Productos
+      </button>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="registro" class="tab-content active">
+      <form action="guardar_producto.php" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="prod-id">ID:</label>
+          <input type="text" name="id" id="prod-id" readonly placeholder="Cargando...">
+        </div>
+
+        <div class="form-group">
+          <label for="nombre">Nombre del Producto:</label>
+          <input type="text" name="nombre" required placeholder="Nombre completo del producto">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="stock">Stock:</label>
+            <input type="number" name="stock" required min="0" placeholder="0">
+          </div>
+
+          <div class="form-group">
+            <label for="restock">Restock:</label>
+            <input type="number" name="restock" min="0" placeholder="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="precio">Precio:</label>
+            <input type="number" name="precio" step="0.01" required min="0" placeholder="0.00">
+          </div>
+
+          <div class="form-group">
+            <label for="costo">Costo:</label>
+            <input type="number" name="costo" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="comentarios">Comentarios:</label>
+          <textarea name="comentarios" rows="3" placeholder="Descripción o comentarios del producto"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="keywords">Palabras Clave:</label>
+          <input type="text" name="keywords" placeholder="Palabras clave para búsqueda">
+        </div>
+
+        <div class="form-group">
+          <label for="imagen">Imagen del Producto:</label>
+          <input type="file" name="imagen" accept="image/*" onchange="previewImage(this)">
+          <img id="preview" class="image-preview" src="" style="display: none;">
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" name="con_lote" id="con_lote" onchange="toggleLoteFields()">
+          <label for="con_lote">¿Producto con lote y expiración?</label>
+        </div>
+
+        <div id="lote-fields" class="lote-section" style="display: none;">
+          <h4><i class="fas fa-boxes"></i> Información de Lote y Expiración</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="numero_lote">Número de Lote:</label>
+              <input type="text" name="numero_lote" id="numero_lote" placeholder="Ej: LOTE-2024-001">
+            </div>
+            <div class="form-group">
+              <label for="fecha_fabricacion">Fecha de Fabricación:</label>
+              <input type="date" name="fecha_fabricacion" id="fecha_fabricacion">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fecha_expiracion">Fecha de Expiración:</label>
+              <input type="date" name="fecha_expiracion" id="fecha_expiracion">
+            </div>
+            <div class="form-group">
+              <label for="temperatura_almacenamiento">Temperatura de Almacenamiento (°C):</label>
+              <input type="number" name="temperatura_almacenamiento" id="temperatura_almacenamiento" 
+                     placeholder="Ej: 25" step="0.1" min="-50" max="100">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="condiciones_especiales">Condiciones Especiales de Almacenamiento:</label>
+            <textarea name="condiciones_especiales" id="condiciones_especiales" rows="2" 
+                      placeholder="Condiciones especiales, precauciones, etc."></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn">
+          <i class="fas fa-save"></i> Guardar Producto
+        </button>
+      </form>
+    </div>
+
+    <!-- CONSULTA -->
+    <div id="consulta" class="tab-content">
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="busqueda" class="search-input" 
+               placeholder="Buscar por nombre o palabras clave..." 
+               oninput="buscarProductos()">
+      </div>
+
+      <div id="results-count" class="results-count" style="display: none;">
+        <i class="fas fa-box"></i> <span id="count-text">0 resultados</span>
+      </div>
+
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Buscando productos...</p>
+      </div>
+
+      <div id="no-results" class="no-results" style="display: none;">
+        <i class="fas fa-search"></i>
+        <h3>No se encontraron coincidencias</h3>
+        <p>Intenta con otros términos de búsqueda</p>
+      </div>
+
+      <div class="navigation">
+        <button class="nav-btn" onclick="anterior()">
+          <i class="fas fa-chevron-left"></i> Anterior
+        </button>
+        <button class="nav-btn" onclick="siguiente()">
+          Siguiente <i class="fas fa-chevron-right"></i>
+        </button>
+        <button class="btn btn-secondary" onclick="cargarTodos()">
+          <i class="fas fa-refresh"></i> Cargar Todos
+        </button>
+      </div>
+
+      <div id="product-display" class="product-info" style="display: none;">
+        <h3>Información del Producto</h3>
+        <form id="form-actualizar" action="actualizar_producto.php" method="POST" enctype="multipart/form-data">
+          <div class="info-grid">
+            <div class="form-group">
+              <label>ID:</label>
+              <input type="text" name="id" id="cons-id" readonly>
+            </div>
+
+            <div class="form-group">
+              <label>Nombre:</label>
+              <input type="text" name="nombre" id="cons-nombre">
+            </div>
+
+            <div class="form-group">
+              <label>Stock:</label>
+              <input type="number" name="stock" id="cons-stock" min="0">
+            </div>
+
+            <div class="form-group">
+              <label>Restock:</label>
+              <input type="number" name="restock" id="cons-restock" min="0">
+            </div>
+
+            <div class="form-group">
+              <label>Precio:</label>
+              <input type="number" name="precio" step="0.01" id="cons-precio" min="0">
+            </div>
+
+            <div class="form-group">
+              <label>Costo:</label>
+              <input type="number" name="costo" step="0.01" id="cons-costo" min="0">
+            </div>
+
+            <div class="form-group">
+              <label>Comentarios:</label>
+              <textarea name="comentarios" id="cons-comentarios" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Palabras Clave:</label>
+              <input type="text" name="keywords" id="cons-keywords">
+            </div>
+
+            <div class="form-group">
+              <label>Nueva Imagen:</label>
+              <input type="file" name="imagen" id="cons-imagen-input" accept="image/*" onchange="previewUpdateImage(this)">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Imagen Actual:</label>
+            <img id="cons-imagen" class="image-preview" src="">
+          </div>
+
+          <!-- Campos de Lote y Expiración -->
+          <div id="cons-lote-fields" class="lote-section" style="display: none;">
+            <h4><i class="fas fa-boxes"></i> Información de Lote y Expiración</h4>
+            <div class="info-grid">
+              <div class="form-group">
+                <label>Con Lote:</label>
+                <input type="text" id="cons-con-lote" readonly>
+              </div>
+              <div class="form-group">
+                <label>Número de Lote:</label>
+                <input type="text" name="numero_lote" id="cons-numero-lote">
+              </div>
+              <div class="form-group">
+                <label>Fecha de Fabricación:</label>
+                <input type="date" name="fecha_fabricacion" id="cons-fecha-fabricacion">
+              </div>
+              <div class="form-group">
+                <label>Fecha de Expiración:</label>
+                <input type="date" name="fecha_expiracion" id="cons-fecha-expiracion">
+              </div>
+              <div class="form-group">
+                <label>Temperatura de Almacenamiento (°C):</label>
+                <input type="number" name="temperatura_almacenamiento" id="cons-temperatura" step="0.1" min="-50" max="100">
+              </div>
+              <div class="form-group">
+                <label>Condiciones Especiales:</label>
+                <textarea name="condiciones_especiales" id="cons-condiciones" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn">
+            <i class="fas fa-save"></i> Actualizar Producto
+          </button>
+        </form>
+      </div>
+
+      <div class="export-links">
+        <a href="exportar_pdf_avanzado.php" target="_blank">
+          <i class="fas fa-file-pdf"></i> Exportar Catálogo PDF
+        </a>
+        <a href="exportar_pdf.php" target="_blank">
+          <i class="fas fa-file-pdf"></i> Exportar Lista Simple
+        </a>
+        <a href="exportar_excel.php" target="_blank">
+          <i class="fas fa-file-excel"></i> Exportar Excel
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let productos = [];
+    let actual = 0;
+    let todosLosProductos = [];
+
+    function mostrarTab(tabId, element) {
+      document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
+      
+      if (element) {
+        element.classList.add("active");
+      }
+      
+      if (tabId === 'consulta') {
+        cargarTodosLosProductos();
+      }
+    }
+
+    function cargarTodosLosProductos() {
+      mostrarLoading();
+      fetch("listar_productos.php")
+        .then(res => res.json())
+        .then(data => {
+          todosLosProductos = data;
+          productos = data;
+          ocultarLoading();
+          mostrarResultados();
+        })
+        .catch(err => {
+          console.error("Error al cargar productos:", err);
+          ocultarLoading();
+          mostrarNoResultados();
+        });
+    }
+
+    function buscarProductos() {
+      const busqueda = document.getElementById("busqueda").value.trim();
+      
+      if (busqueda.length === 0) {
+        productos = todosLosProductos;
+        mostrarResultados();
+        return;
+      }
+
+      mostrarLoading();
+      
+      // Búsqueda local por ahora
+      const filtro = busqueda.toLowerCase();
+      const encontrados = todosLosProductos.filter(p =>
+        p.nombre.toLowerCase().includes(filtro) || 
+        (p.palabras_clave && p.palabras_clave.toLowerCase().includes(filtro))
+      );
+      
+      productos = encontrados;
+      ocultarLoading();
+      mostrarResultados();
+    }
+
+    function mostrarResultados() {
+      const resultsCount = document.getElementById("results-count");
+      const countText = document.getElementById("count-text");
+      const productDisplay = document.getElementById("product-display");
+      const noResults = document.getElementById("no-results");
+
+      if (productos.length === 0) {
+        resultsCount.style.display = "none";
+        productDisplay.style.display = "none";
+        noResults.style.display = "block";
+        return;
+      }
+
+      resultsCount.style.display = "inline-block";
+      countText.textContent = `${productos.length} resultado${productos.length !== 1 ? 's' : ''}`;
+      
+      noResults.style.display = "none";
+      productDisplay.style.display = "block";
+      
+      actual = 0;
+      mostrarProducto();
+    }
+
+    function mostrarLoading() {
+      document.getElementById("loading").style.display = "block";
+      document.getElementById("results-count").style.display = "none";
+      document.getElementById("product-display").style.display = "none";
+      document.getElementById("no-results").style.display = "none";
+    }
+
+    function ocultarLoading() {
+      document.getElementById("loading").style.display = "none";
+    }
+
+    function mostrarNoResultados() {
+      document.getElementById("no-results").style.display = "block";
+      document.getElementById("results-count").style.display = "none";
+      document.getElementById("product-display").style.display = "none";
+    }
+
+    function mostrarProducto() {
+      if (productos.length > 0) {
+        const p = productos[actual];
+        document.getElementById("cons-id").value = p.id || '';
+        document.getElementById("cons-nombre").value = p.nombre || '';
+        document.getElementById("cons-stock").value = p.stock || '';
+        document.getElementById("cons-restock").value = p.restock || '';
+        document.getElementById("cons-precio").value = p.precio || '';
+        document.getElementById("cons-costo").value = p.costo || '';
+        document.getElementById("cons-comentarios").value = p.comentarios || '';
+        document.getElementById("cons-keywords").value = p.palabras_clave || '';
+        document.getElementById("cons-imagen").src = p.imagen ? `imagenes/${p.imagen}` : '';
+        
+        // Mostrar campos de lote si el producto tiene lote
+        const loteFields = document.getElementById("cons-lote-fields");
+        if (p.con_lote == 1) {
+          loteFields.style.display = 'block';
+          document.getElementById("cons-con-lote").value = 'Sí';
+          document.getElementById("cons-numero-lote").value = p.numero_lote || '';
+          document.getElementById("cons-fecha-fabricacion").value = p.fecha_fabricacion || '';
+          document.getElementById("cons-fecha-expiracion").value = p.fecha_expiracion || '';
+          document.getElementById("cons-temperatura").value = p.temperatura_almacenamiento || '';
+          document.getElementById("cons-condiciones").value = p.condiciones_especiales || '';
+        } else {
+          loteFields.style.display = 'none';
+          document.getElementById("cons-con-lote").value = 'No';
+          document.getElementById("cons-numero-lote").value = '';
+          document.getElementById("cons-fecha-fabricacion").value = '';
+          document.getElementById("cons-fecha-expiracion").value = '';
+          document.getElementById("cons-temperatura").value = '';
+          document.getElementById("cons-condiciones").value = '';
+        }
+      }
+    }
+
+    function siguiente() {
+      if (actual < productos.length - 1) {
+        actual++;
+        mostrarProducto();
+      }
+    }
+
+    function anterior() {
+      if (actual > 0) {
+        actual--;
+        mostrarProducto();
+      }
+    }
+
+    function cargarTodos() {
+      document.getElementById("busqueda").value = '';
+      cargarTodosLosProductos();
+    }
+
+    function previewImage(input) {
+      console.log('previewImage called with:', input);
+      const preview = document.getElementById('preview');
+      if (!preview) {
+        console.error('Preview element not found');
+        return;
+      }
+      
+      if (input.files && input.files[0]) {
+        console.log('File selected:', input.files[0].name);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          console.log('File loaded, setting preview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        }
+        reader.onerror = function(e) {
+          console.error('Error reading file:', e);
+        }
+        reader.readAsDataURL(input.files[0]);
+      } else {
+        console.log('No file selected');
+        preview.style.display = 'none';
+      }
+    }
+
+    function previewUpdateImage(input) {
+      console.log('previewUpdateImage called with:', input);
+      const preview = document.getElementById('cons-imagen');
+      if (!preview) {
+        console.error('Preview element cons-imagen not found');
+        return;
+      }
+      
+      if (input.files && input.files[0]) {
+        console.log('File selected for update:', input.files[0].name);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          console.log('File loaded for update, setting preview');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        }
+        reader.onerror = function(e) {
+          console.error('Error reading file for update:', e);
+        }
+        reader.readAsDataURL(input.files[0]);
+      } else {
+        console.log('No file selected for update');
+      }
+    }
+
+    function toggleLoteFields() {
+      const checkbox = document.getElementById('con_lote');
+      const loteFields = document.getElementById('lote-fields');
+      
+      if (checkbox.checked) {
+        loteFields.style.display = 'block';
+        // Establecer fecha mínima para expiración (hoy)
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('fecha_expiracion').min = today;
+      } else {
+        loteFields.style.display = 'none';
+        // Limpiar campos cuando se desmarca
+        document.getElementById('numero_lote').value = '';
+        document.getElementById('fecha_fabricacion').value = '';
+        document.getElementById('fecha_expiracion').value = '';
+        document.getElementById('temperatura_almacenamiento').value = '';
+        document.getElementById('condiciones_especiales').value = '';
+      }
+    }
+
+    function cargarProximoId() {
+      const timestamp = new Date().getTime();
+      fetch(`obtener_proximo_id.php?t=${timestamp}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.proximo_id) {
+            document.getElementById("prod-id").value = data.proximo_id;
+            document.getElementById("prod-id").placeholder = "";
+          }
+        })
+        .catch(err => {
+          console.error("Error al cargar próximo ID:", err);
+          document.getElementById("prod-id").value = "1";
+          document.getElementById("prod-id").placeholder = "";
+        });
+    }
+
+    // Inicializar
+    window.onload = function() {
+      mostrarTab('registro');
+      cargarProximoId();
+      
+      // Agregar event listeners para los inputs de archivo
+      const imagenInput = document.querySelector('input[name="imagen"]');
+      const consImagenInput = document.getElementById('cons-imagen-input');
+      
+      if (imagenInput) {
+        imagenInput.addEventListener('change', function() {
+          console.log('Event listener triggered for registro imagen');
+          previewImage(this);
+        });
+      }
+      
+      if (consImagenInput) {
+        consImagenInput.addEventListener('change', function() {
+          console.log('Event listener triggered for consulta imagen');
+          previewUpdateImage(this);
+        });
+      }
+    };
+
+    // Actualizar ID después de guardar producto
+    document.querySelector('form[action="guardar_producto.php"]').addEventListener('submit', function() {
+      document.getElementById("prod-id").value = "";
+      document.getElementById("prod-id").placeholder = "Guardando...";
+      
+      setTimeout(() => {
+        cargarProximoId();
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

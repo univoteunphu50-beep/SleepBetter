@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vendedor</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .form-group { margin: 10px 0; }
+        label { display: block; margin-bottom: 5px; }
+        input { padding: 8px; width: 300px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Campo Vendedor</h1>
+    
+    <div class="form-group">
+        <label for="vendedor">Vendedor:</label>
+        <input type="text" id="vendedor" name="vendedor" placeholder="Ingrese el nombre del vendedor">
+    </div>
+    
+    <button onclick="testVendedor()">Probar Campo Vendedor</button>
+    <button onclick="simularEnvio()">Simular Envío de Formulario</button>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+        // Función para establecer vendedor por defecto
+        function establecerVendedorPorDefecto() {
+            const vendedorInput = document.getElementById('vendedor');
+            if (vendedorInput) {
+                if (!vendedorInput.value || vendedorInput.value.trim() === '') {
+                    // Intentar obtener el usuario logueado
+                    fetch('facturacion/obtener_usuario.php')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.nombre) {
+                                vendedorInput.value = data.nombre;
+                                mostrarResultado('✅ Vendedor establecido automáticamente: ' + data.nombre);
+                            } else {
+                                vendedorInput.value = 'Vendedor';
+                                mostrarResultado('✅ Vendedor establecido por defecto: Vendedor');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al obtener usuario:', error);
+                            vendedorInput.value = 'Vendedor';
+                            mostrarResultado('✅ Vendedor establecido por defecto: Vendedor');
+                        });
+                } else {
+                    mostrarResultado('ℹ️ Vendedor ya tiene valor: ' + vendedorInput.value);
+                }
+            }
+        }
+
+        function testVendedor() {
+            const vendedorInput = document.getElementById('vendedor');
+            mostrarResultado('📋 Valor actual del vendedor: "' + vendedorInput.value + '"');
+            establecerVendedorPorDefecto();
+        }
+
+        function simularEnvio() {
+            const vendedorInput = document.getElementById('vendedor');
+            let vendedor = vendedorInput.value;
+            
+            // Asegurar que el vendedor tenga un valor
+            if (!vendedor || vendedor.trim() === '') {
+                vendedor = 'Vendedor';
+                vendedorInput.value = vendedor;
+                mostrarResultado('⚠️ Vendedor estaba vacío, se estableció: ' + vendedor);
+            } else {
+                mostrarResultado('✅ Vendedor válido: ' + vendedor);
+            }
+        }
+
+        function mostrarResultado(mensaje) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML += '<p>' + mensaje + '</p>';
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            establecerVendedorPorDefecto();
+        });
+    </script>
+</body>
+</html> 

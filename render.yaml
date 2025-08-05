@@ -1,0 +1,39 @@
+services:
+  # Base de datos MySQL
+  - type: mysql
+    name: sleepbetter-mysql
+    plan: free
+    ipAllowList: []
+    maxConnections: 100
+
+  # Aplicación web SleepBetter
+  - type: web
+    name: sleepbetter-app
+    env: docker
+    plan: free
+    region: oregon
+    buildCommand: docker build -t sleepbetter .
+    startCommand: docker run -p $PORT:80 sleepbetter
+    envVars:
+      - key: MYSQL_HOST
+        fromDatabase:
+          name: sleepbetter-mysql
+          property: host
+      - key: MYSQL_PORT
+        fromDatabase:
+          name: sleepbetter-mysql
+          property: port
+      - key: MYSQL_DATABASE
+        fromDatabase:
+          name: sleepbetter-mysql
+          property: database
+      - key: MYSQL_USER
+        fromDatabase:
+          name: sleepbetter-mysql
+          property: username
+      - key: MYSQL_PASSWORD
+        fromDatabase:
+          name: sleepbetter-mysql
+          property: password
+      - key: PORT
+        value: 10000 

@@ -1,0 +1,17 @@
+RewriteEngine On
+
+# Redirigir la página principal al index.php (que verificará autenticación)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^$ index.php [L]
+
+# Permitir acceso directo a login.php
+RewriteRule ^login\.php$ - [L]
+
+# Permitir acceso directo a index.php
+RewriteRule ^index\.php$ - [L]
+
+# Redirigir todas las demás rutas al index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L] 
