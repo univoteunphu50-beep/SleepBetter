@@ -74,8 +74,11 @@ try {
     $total = $subtotal + $itbis;
 
     // PASO 3: INSERTAR FACTURA PRINCIPAL
-    $sql_factura = "INSERT INTO facturas (fecha, vendedor, cedula_cliente, subtotal, itbis, total) VALUES (?, ?, ?, ?, ?, ?)";
-    $params_factura = [$fecha, $vendedor, $cliente, $subtotal, $itbis, $total];
+    // Generar número de factura único
+    $numero_factura = 'FAC-' . date('Ymd') . '-' . time();
+    
+    $sql_factura = "INSERT INTO facturas (numero_factura, fecha_factura, vendedor, cliente, subtotal, itbis, total) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $params_factura = [$numero_factura, $fecha, $vendedor, $cliente, $subtotal, $itbis, $total];
     
     $id_factura = executeInsert($conn, $sql_factura, $params_factura);
     
@@ -100,8 +103,8 @@ try {
         $id_producto = $productoData ? $productoData['id'] : 0;
         
         // Insertar detalle con la estructura correcta
-        $sql_detalle = "INSERT INTO detalle_factura (id_factura, id_producto, nombre, precio, itebis, descuento, cantidad, precio_unitario, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $params_detalle = [$id_factura, $id_producto, $producto['nombre'], $precio, $aplicarItbis, $descuento, $cantidad, $precio, $totalProducto];
+        $sql_detalle = "INSERT INTO detalles_factura (factura_id, producto_id, nombre_producto, precio, aplicar_itbis, descuento, cantidad, total_producto) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $params_detalle = [$id_factura, $id_producto, $producto['nombre'], $precio, $aplicarItbis, $descuento, $cantidad, $totalProducto];
         
         $result_detalle = executeInsert($conn, $sql_detalle, $params_detalle);
         
