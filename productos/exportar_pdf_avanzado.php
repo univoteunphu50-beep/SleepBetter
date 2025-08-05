@@ -7,12 +7,12 @@ ob_start();
 
 require_once('../TCPDF-main/tcpdf.php');
 include("../conexion.php");
+include("../db_helper.php");
 
 // Verificar si hay productos
-$sql = "SELECT * FROM productos ORDER BY nombre ASC";
-$result = $conn->query($sql);
+$productos = selectAll($conn, "SELECT * FROM productos ORDER BY nombre ASC");
 
-if ($result->num_rows === 0) {
+if (count($productos) === 0) {
     die("No hay productos para exportar");
 }
 
@@ -53,7 +53,7 @@ $pdf->Cell(0, 6, 'Fecha de generación: ' . date('d/m/Y H:i:s'), 0, 1, 'C');
 $pdf->Ln(10);
 
 // Contador de productos
-$total_productos = $result->num_rows;
+$total_productos = count($productos);
 $pdf->SetFont('helvetica', 'B', 12);
 $pdf->Cell(0, 8, 'Resumen del Inventario', 0, 1, 'L');
 $pdf->Ln(5);
@@ -64,13 +64,12 @@ $pdf->SetFont('helvetica', '', 10);
 // Calcular estadísticas
 $sql_stats = "SELECT 
     COUNT(*) as total_productos,
-    COUNT(CASE WHEN con_lote = 1 THEN 1 END) as productos_lotes,
+    COUNT(CASE WHEN con_lote = true THEN 1 END) as productos_lotes,
     COUNT(CASE WHEN stock <= restock THEN 1 END) as stock_bajo,
     SUM(stock * precio) as valor_total,
     AVG(precio) as precio_promedio
 FROM productos";
-$result_stats = $conn->query($sql_stats);
-$stats = $result_stats->fetch_assoc();
+$stats = selectOne($conn, $sql_stats);
 
 $pdf->Cell(0, 6, '• Total de productos: ' . $stats['total_productos'], 0, 1, 'L');
 $pdf->Cell(0, 6, '• Productos con control de lotes: ' . $stats['productos_lotes'], 0, 1, 'L');
@@ -103,7 +102,7 @@ $pdf->SetFont('helvetica', '', 8);
 // Datos de productos
 $fill = false;
 $row_count = 0;
-while ($row = $result->fetch_assoc()) {
+foreach ($productos as $row) {
     $pdf->SetFillColor($fill ? 245 : 255, $fill ? 245 : 255, $fill ? 245 : 255);
     
     // ID
@@ -172,10 +171,9 @@ $pdf->SetFont('helvetica', 'B', 16);
 $pdf->Cell(0, 10, 'PRODUCTOS CON CONTROL DE LOTES', 0, 1, 'L');
 $pdf->Ln(5);
 
-$sql_lotes = "SELECT * FROM productos WHERE con_lote = 1 ORDER BY nombre ASC";
-$result_lotes = $conn->query($sql_lotes);
+$productos_lotes = selectAll($conn, "SELECT * FROM productos WHERE con_lote = true ORDER BY nombre ASC");
 
-if ($result_lotes->num_rows > 0) {
+if (count($productos_lotes) > 0) {
     $pdf->SetFont('helvetica', 'B', 9);
     $pdf->SetFillColor(70, 130, 180);
     $pdf->SetTextColor(255, 255, 255);
@@ -189,7 +187,7 @@ if ($result_lotes->num_rows > 0) {
     $pdf->SetFont('helvetica', '', 8);
     $fill = false;
     
-    while ($row = $result_lotes->fetch_assoc()) {
+    foreach ($productos_lotes as $row) {
         $pdf->SetFillColor($fill ? 245 : 255, $fill ? 245 : 255, $fill ? 245 : 255);
         
         // Nombre
@@ -237,10 +235,9 @@ $pdf->SetFont('helvetica', 'B', 16);
 $pdf->Cell(0, 10, 'PRODUCTOS CON STOCK BAJO', 0, 1, 'L');
 $pdf->Ln(5);
 
-$sql_stock_bajo = "SELECT * FROM productos WHERE stock <= restock ORDER BY stock ASC";
-$result_stock_bajo = $conn->query($sql_stock_bajo);
+$productos_stock_bajo = selectAll($conn, "SELECT * FROM productos WHERE stock <= restock ORDER BY stock ASC");
 
-if ($result_stock_bajo->num_rows > 0) {
+if (count($productos_stock_bajo) > 0) {
     $pdf->SetFont('helvetica', 'B', 9);
     $pdf->SetFillColor(255, 0, 0);
     $pdf->SetTextColor(255, 255, 255);
@@ -254,7 +251,7 @@ if ($result_stock_bajo->num_rows > 0) {
     $pdf->SetFont('helvetica', '', 8);
     $fill = false;
     
-    while ($row = $result_stock_bajo->fetch_assoc()) {
+    foreach ($productos_stock_bajo as $row) {
         $pdf->SetFillColor($fill ? 255 : 255, $fill ? 240 : 240, $fill ? 240 : 240);
         
         // Nombre
@@ -306,7 +303,7 @@ $pdf->Cell(0, 8, 'Para más información, contacte a Sleep Better', 0, 1, 'C');
 $pdf->Cell(0, 8, 'Página ' . $pdf->getAliasNumPage() . ' de ' . $pdf->getAliasNbPages(), 0, 1, 'C');
 
 // Cerrar conexión
-$conn->close();
+closeConnection($conn);
 
 // Limpiar buffer y generar PDF
 ob_end_clean();
