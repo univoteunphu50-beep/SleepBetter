@@ -1,5 +1,6 @@
 <?php
 include("../conexion.php");
+include("../db_helper.php");
 include("../funciones_stock.php");
 
 // Obtener datos del formulario
@@ -14,9 +15,6 @@ if (empty($cliente) || empty($vendedor) || empty($fecha) || empty($productos)) {
     exit;
 }
 
-// Iniciar transacción para asegurar consistencia
-$conn->begin_transaction();
-
 try {
     // PASO 1: VALIDAR STOCK DISPONIBLE
     $productosSinStock = [];
@@ -26,11 +24,7 @@ try {
         $cantidadSolicitada = intval($producto['cantidad']);
         
         // Obtener stock actual del producto
-        $stmtStock = $conn->prepare("SELECT id, stock, nombre FROM productos WHERE nombre = ?");
-        $stmtStock->bind_param("s", $nombre);
-        $stmtStock->execute();
-        $resultStock = $stmtStock->get_result();
-        $productoData = $resultStock->fetch_assoc();
+        $productoData = selectOne($conn, "SELECT id, stock, nombre FROM productos WHERE nombre = ?", [$nombre]);
         
         if (!$productoData) {
             throw new Exception("Producto no encontrado: " . $nombre);
@@ -80,14 +74,14 @@ try {
     $total = $subtotal + $itbis;
 
     // PASO 3: INSERTAR FACTURA PRINCIPAL
-    $stmt = $conn->prepare("INSERT INTO facturas (fecha, vendedor, cedula_cliente, subtotal, itbis, total) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssddd", $fecha, $vendedor, $cliente, $subtotal, $itbis, $total);
+    $sql_factura = "INSERT INTO facturas (fecha, vendedor, cedula_cliente, subtotal, itbis, total) VALUES (?, ?, ?, ?, ?, ?)";
+    $params_factura = [$fecha, $vendedor, $cliente, $subtotal, $itbis, $total];
     
-    if (!$stmt->execute()) {
-        throw new Exception("Error al insertar factura: " . $stmt->error);
+    $id_factura = executeInsert($conn, $sql_factura, $params_factura);
+    
+    if (!$id_factura) {
+        throw new Exception("Error al insertar factura");
     }
-    
-    $id_factura = $stmt->insert_id;
     
     // PASO 4: INSERTAR DETALLE DE PRODUCTOS Y ACTUALIZAR STOCK
     foreach ($productos as $producto) {
@@ -102,20 +96,17 @@ try {
         $totalProducto = $subtotalProducto + $itbisProducto;
         
         // Buscar el ID del producto por nombre
-        $stmtProducto = $conn->prepare("SELECT id FROM productos WHERE nombre = ?");
-        $stmtProducto->bind_param("s", $producto['nombre']);
-        $stmtProducto->execute();
-        $resultProducto = $stmtProducto->get_result();
-        $productoData = $resultProducto->fetch_assoc();
-        
+        $productoData = selectOne($conn, "SELECT id FROM productos WHERE nombre = ?", [$producto['nombre']]);
         $id_producto = $productoData ? $productoData['id'] : 0;
         
         // Insertar detalle con la estructura correcta
-        $stmtDetalle = $conn->prepare("INSERT INTO detalle_factura (id_factura, id_producto, nombre, precio, itebis, descuento, cantidad, precio_unitario, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmtDetalle->bind_param("iisdddddd", $id_factura, $id_producto, $producto['nombre'], $precio, $aplicarItbis, $descuento, $cantidad, $precio, $totalProducto);
+        $sql_detalle = "INSERT INTO detalle_factura (id_factura, id_producto, nombre, precio, itebis, descuento, cantidad, precio_unitario, total) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $params_detalle = [$id_factura, $id_producto, $producto['nombre'], $precio, $aplicarItbis, $descuento, $cantidad, $precio, $totalProducto];
         
-        if (!$stmtDetalle->execute()) {
-            throw new Exception("Error al insertar detalle: " . $stmtDetalle->error);
+        $result_detalle = executeInsert($conn, $sql_detalle, $params_detalle);
+        
+        if (!$result_detalle) {
+            throw new Exception("Error al insertar detalle para: " . $producto['nombre']);
         }
         
         // ACTUALIZAR STOCK DEL PRODUCTO Y REGISTRAR MOVIMIENTO
@@ -128,17 +119,12 @@ try {
         }
     }
     
-    // Confirmar transacción
-    $conn->commit();
-    
     echo "Factura guardada exitosamente. ID: " . $id_factura;
     
 } catch (Exception $e) {
-    // Revertir transacción en caso de error
-    $conn->rollback();
     echo "Error: " . $e->getMessage();
 }
 
-$conn->close();
+closeConnection($conn);
 ?>
 
