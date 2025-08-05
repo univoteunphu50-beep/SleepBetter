@@ -594,7 +594,7 @@ function renderizarFacturas() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${factura.id}</td>
-            <td>${formatearFecha(factura.fecha)}</td>
+            <td>${formatearFecha(factura.fecha_factura)}</td>
             <td>${factura.cliente}</td>
             <td>${factura.productos}</td>
             <td>$${parseFloat(factura.total).toFixed(2)}</td>
