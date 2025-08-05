@@ -1,17 +1,15 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 include("../conexion.php");
+include("../db_helper.php");
 
-$sql = "SELECT * FROM clientes ORDER BY cliente ASC";
-$resultado = $conn->query($sql);
-
-$clientes = [];
-
-while ($fila = $resultado->fetch_assoc()) {
-    $clientes[] = $fila;
+try {
+    $clientes = selectAll($conn, "SELECT * FROM clientes ORDER BY cliente ASC");
+    echo json_encode($clientes, JSON_UNESCAPED_UNICODE);
+} catch (Exception $e) {
+    echo json_encode(['error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
 }
 
-echo json_encode($clientes, JSON_UNESCAPED_UNICODE);
-$conn->close();
+closeConnection($conn);
 ?>
 
