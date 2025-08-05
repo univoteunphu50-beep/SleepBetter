@@ -2,6 +2,9 @@
 // Archivo: db_helper.php
 // Helper para manejar consultas compatibles con PostgreSQL y MySQL
 
+// Evitar redeclaración de funciones
+if (!function_exists('executeQuery')) {
+
 /**
  * Ejecuta una consulta preparada de manera compatible con PDO y MySQLi
  */
@@ -135,3 +138,6 @@ function executeInsert($conn, $sql, $params = []) {
     closeStatement($stmt);
     return $lastId;
 }
+
+} // Fin de la verificación de función
+?>
