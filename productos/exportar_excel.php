@@ -1,18 +1,34 @@
 <?php
 include '../conexion.php';
+include '../db_helper.php';
 
 // Set headers for Excel download
 header('Content-Type: application/vnd.ms-excel');
 header('Content-Disposition: attachment; filename="catalogo_productos.xls"');
 header('Cache-Control: max-age=0');
 
-// First check what columns actually exist
-$checkColumns = $conn->query("DESCRIBE productos");
+// Get column information for PostgreSQL
 $existingColumns = [];
-if ($checkColumns) {
-    while ($col = $checkColumns->fetch_assoc()) {
-        $existingColumns[] = $col['Field'];
+try {
+    if ($conn instanceof PDO) {
+        // PostgreSQL way to get column information
+        $sql = "SELECT column_name FROM information_schema.columns WHERE table_name = 'productos' ORDER BY ordinal_position";
+        $columns = selectAll($conn, $sql);
+        foreach ($columns as $col) {
+            $existingColumns[] = $col['column_name'];
+        }
+    } else {
+        // MySQL way
+        $checkColumns = $conn->query("DESCRIBE productos");
+        if ($checkColumns) {
+            while ($col = $checkColumns->fetch_assoc()) {
+                $existingColumns[] = $col['Field'];
+            }
+        }
     }
+} catch (Exception $e) {
+    // Fallback to known columns if schema query fails
+    $existingColumns = ['id', 'nombre', 'stock', 'restock', 'precio', 'costo', 'comentarios', 'palabras_clave', 'imagen', 'con_lote', 'numero_lote', 'fecha_creacion'];
 }
 
 // Build the SELECT query based on existing columns
@@ -55,7 +71,7 @@ if (in_array('con_lote', $existingColumns)) {
 
 // Build the query
 $query = "SELECT " . implode(', ', $selectFields) . " FROM productos ORDER BY id";
-$result = $conn->query($query);
+$productos = selectAll($conn, $query);
 
 // Start HTML table that Excel can read
 echo '<!DOCTYPE html>';
@@ -112,7 +128,7 @@ if (in_array('con_lote', $existingColumns)) {
 echo '</tr>';
 
 // Write data rows
-while ($row = $result->fetch_assoc()) {
+foreach ($productos as $row) {
     echo '<tr>';
     
     if (in_array('id', $existingColumns)) {

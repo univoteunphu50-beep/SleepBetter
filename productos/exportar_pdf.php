@@ -7,12 +7,12 @@ ob_start();
 
 require_once('../TCPDF-main/tcpdf.php');
 include("../conexion.php");
+include("../db_helper.php");
 
 // Verificar si hay productos
-$sql = "SELECT * FROM productos ORDER BY nombre ASC";
-$result = $conn->query($sql);
+$productos = selectAll($conn, "SELECT * FROM productos ORDER BY nombre ASC");
 
-if ($result->num_rows === 0) {
+if (count($productos) === 0) {
     die("No hay productos para exportar");
 }
 
@@ -51,7 +51,7 @@ $pdf->Cell(0, 8, 'Fecha de generación: ' . date('d/m/Y H:i:s'), 0, 1, 'C');
 $pdf->Ln(10);
 
 // Contador de productos
-$total_productos = $result->num_rows;
+$total_productos = count($productos);
 $pdf->SetFont('helvetica', 'B', 12);
 $pdf->Cell(0, 8, 'Total de productos: ' . $total_productos, 0, 1, 'L');
 $pdf->Ln(5);
@@ -72,7 +72,7 @@ $pdf->SetFont('helvetica', '', 9);
 
 // Datos de productos
 $fill = false;
-while ($row = $result->fetch_assoc()) {
+foreach ($productos as $row) {
     $pdf->SetFillColor($fill ? 245 : 255, $fill ? 245 : 255, $fill ? 245 : 255);
     
     // ID
@@ -108,10 +108,9 @@ $pdf->SetFont('helvetica', 'B', 14);
 $pdf->Cell(0, 10, 'PRODUCTOS CON CONTROL DE LOTES', 0, 1, 'L');
 $pdf->Ln(5);
 
-$sql_lotes = "SELECT * FROM productos WHERE con_lote = 1 ORDER BY nombre ASC";
-$result_lotes = $conn->query($sql_lotes);
+$productos_lotes = selectAll($conn, "SELECT * FROM productos WHERE con_lote = true ORDER BY nombre ASC");
 
-if ($result_lotes->num_rows > 0) {
+if (count($productos_lotes) > 0) {
     $pdf->SetFont('helvetica', 'B', 10);
     $pdf->SetFillColor(240, 240, 240);
     $pdf->Cell(60, 8, 'NOMBRE', 1, 0, 'C', true);
@@ -123,7 +122,7 @@ if ($result_lotes->num_rows > 0) {
     $pdf->SetFont('helvetica', '', 9);
     $fill = false;
     
-    while ($row = $result_lotes->fetch_assoc()) {
+    foreach ($productos_lotes as $row) {
         $pdf->SetFillColor($fill ? 245 : 255, $fill ? 245 : 255, $fill ? 245 : 255);
         
         // Nombre
@@ -164,19 +163,16 @@ $pdf->Ln(5);
 $pdf->SetFont('helvetica', '', 10);
 
 // Contar productos con lotes
-$sql_count_lotes = "SELECT COUNT(*) as total FROM productos WHERE con_lote = 1";
-$result_count_lotes = $conn->query($sql_count_lotes);
-$total_lotes = $result_count_lotes->fetch_assoc()['total'];
+$total_lotes_result = selectOne($conn, "SELECT COUNT(*) as total FROM productos WHERE con_lote = true");
+$total_lotes = $total_lotes_result['total'];
 
 // Calcular valor total del inventario
-$sql_valor = "SELECT SUM(stock * precio) as valor_total FROM productos";
-$result_valor = $conn->query($sql_valor);
-$valor_total = $result_valor->fetch_assoc()['valor_total'];
+$valor_total_result = selectOne($conn, "SELECT SUM(stock * precio) as valor_total FROM productos");
+$valor_total = $valor_total_result['valor_total'];
 
 // Productos con stock bajo
-$sql_stock_bajo = "SELECT COUNT(*) as total FROM productos WHERE stock <= restock";
-$result_stock_bajo = $conn->query($sql_stock_bajo);
-$stock_bajo = $result_stock_bajo->fetch_assoc()['total'];
+$stock_bajo_result = selectOne($conn, "SELECT COUNT(*) as total FROM productos WHERE stock <= restock");
+$stock_bajo = $stock_bajo_result['total'];
 
 $pdf->Cell(0, 6, '• Total de productos: ' . $total_productos, 0, 1, 'L');
 $pdf->Cell(0, 6, '• Productos con control de lotes: ' . $total_lotes, 0, 1, 'L');
@@ -191,7 +187,7 @@ $pdf->Cell(0, 8, 'Este catálogo fue generado automáticamente por el sistema Sl
 $pdf->Cell(0, 8, 'Para más información, contacte a Sleep Better', 0, 1, 'C');
 
 // Cerrar conexión
-$conn->close();
+closeConnection($conn);
 
 // Limpiar buffer y generar PDF
 ob_end_clean();
