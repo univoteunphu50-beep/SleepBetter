@@ -10,12 +10,12 @@ services:
       - key: PORT
         value: 10000
       - key: DB_HOST
-        value: localhost
+        value: dpg-d28u1r0gjchc73c4gdrg-a.oregon-postgres.render.com
       - key: DB_PORT
         value: 5432
       - key: DB_NAME
         value: sleepbetter_db
       - key: DB_USER
-        value: postgres
+        value: sleepbetter_db_user
       - key: DB_PASSWORD
-        value: "" 
+        value: Aizl7PQqwZ1P5hdt9xeYMbePQGJNdTdL 
