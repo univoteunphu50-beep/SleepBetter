@@ -1,11 +1,12 @@
 <?php
 include '../conexion.php';
+include '../db_helper.php';
 header('Content-Type: application/json');
 
-$result = $conn->query("SELECT * FROM productos");
-$productos = [];
-while ($row = $result->fetch_assoc()) {
-    $productos[] = $row;
+try {
+    $productos = selectAll($conn, "SELECT * FROM productos ORDER BY fecha_creacion DESC");
+    echo json_encode($productos);
+} catch (Exception $e) {
+    echo json_encode(['error' => $e->getMessage()]);
 }
-echo json_encode($productos);
 ?>
