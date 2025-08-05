@@ -4,6 +4,7 @@
 
 require_once('../TCPDF-main/tcpdf.php');
 include("../conexion.php");
+include("../db_helper.php");
 
 $id_factura = $_GET['id'] ?? 0;
 
@@ -13,54 +14,40 @@ if (!$id_factura) {
 
 try {
     // Obtener datos de la factura
-    $stmt = $conn->prepare("
+    $sql_factura = "
         SELECT 
             f.id,
-            f.fecha,
+            f.numero_factura,
+            f.fecha_factura,
             f.vendedor,
+            f.cliente,
             f.subtotal,
             f.itbis,
-            f.total,
-            c.cliente,
-            c.cedula,
-            c.telefono,
-            c.email,
-            c.direccion
+            f.total
         FROM facturas f
-        INNER JOIN clientes c ON f.cedula_cliente = c.cedula
         WHERE f.id = ?
-    ");
+    ";
     
-    $stmt->bind_param("i", $id_factura);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $factura = $result->fetch_assoc();
+    $factura = selectOne($conn, $sql_factura, [$id_factura]);
     
     if (!$factura) {
         die('Factura no encontrada');
     }
     
     // Obtener productos de la factura
-    $stmt = $conn->prepare("
+    $sql_productos = "
         SELECT 
-            d.nombre,
+            d.nombre_producto as nombre,
             d.precio,
             d.cantidad,
             d.descuento,
-            d.itebis,
-            d.total as total_producto
-        FROM detalle_factura d
-        WHERE d.id_factura = ?
-    ");
+            d.aplicar_itbis as itebis,
+            d.total_producto as total
+        FROM detalles_factura d
+        WHERE d.factura_id = ?
+    ";
     
-    $stmt->bind_param("i", $id_factura);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $productos = [];
-    
-    while ($row = $result->fetch_assoc()) {
-        $productos[] = $row;
-    }
+    $productos = selectAll($conn, $sql_productos, [$id_factura]);
     
     $factura['productos'] = $productos;
     
@@ -74,7 +61,7 @@ $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8',
 // Configurar información del documento
 $pdf->SetCreator('Sleep Better');
 $pdf->SetAuthor('Sleep Better');
-$pdf->SetTitle('Factura #' . $factura['id']);
+$pdf->SetTitle('Factura #' . ($factura['numero_factura'] ?? $factura['id']));
 
 // Configurar márgenes
 $pdf->SetMargins(15, 15, 15);
@@ -94,12 +81,12 @@ $pdf->AddPage();
 $pdf->SetFont('helvetica', 'B', 20);
 $pdf->Cell(0, 10, 'SLEEP BETTER', 0, 1, 'C');
 $pdf->SetFont('helvetica', 'B', 16);
-$pdf->Cell(0, 8, 'FACTURA #' . $factura['id'], 0, 1, 'C');
+$pdf->Cell(0, 8, 'FACTURA #' . ($factura['numero_factura'] ?? $factura['id']), 0, 1, 'C');
 $pdf->Ln(5);
 
 // Información de la factura
 $pdf->SetFont('helvetica', '', 10);
-$pdf->Cell(0, 8, 'Fecha: ' . date('d/m/Y', strtotime($factura['fecha'])), 0, 1);
+$pdf->Cell(0, 8, 'Fecha: ' . date('d/m/Y', strtotime($factura['fecha_factura'])), 0, 1);
 $pdf->Cell(0, 8, 'Vendedor: ' . $factura['vendedor'], 0, 1);
 $pdf->Ln(5);
 
@@ -108,16 +95,6 @@ $pdf->SetFont('helvetica', 'B', 12);
 $pdf->Cell(0, 8, 'DATOS DEL CLIENTE', 0, 1);
 $pdf->SetFont('helvetica', '', 10);
 $pdf->Cell(0, 6, 'Nombre: ' . $factura['cliente'], 0, 1);
-$pdf->Cell(0, 6, 'Cédula: ' . $factura['cedula'], 0, 1);
-if (!empty($factura['telefono'])) {
-    $pdf->Cell(0, 6, 'Teléfono: ' . $factura['telefono'], 0, 1);
-}
-if (!empty($factura['email'])) {
-    $pdf->Cell(0, 6, 'Email: ' . $factura['email'], 0, 1);
-}
-if (!empty($factura['direccion'])) {
-    $pdf->Cell(0, 6, 'Dirección: ' . $factura['direccion'], 0, 1);
-}
 $pdf->Ln(10);
 
 // Tabla de productos
@@ -154,9 +131,9 @@ foreach ($factura['productos'] as $producto) {
     $pdf->Cell(20, 8, $producto['cantidad'], 1, 0, 'C', $fill);
     $pdf->Cell(20, 8, $producto['descuento'] . '%', 1, 0, 'C', $fill);
     $pdf->Cell(15, 8, $producto['itebis'] ? 'Sí' : 'No', 1, 0, 'C', $fill);
-    $pdf->Cell(25, 8, '$' . number_format($producto['total_producto'], 2), 1, 1, 'R', $fill);
+    $pdf->Cell(25, 8, '$' . number_format($producto['total'], 2), 1, 1, 'R', $fill);
     
-    $totalProductos += $producto['total_producto'];
+    $totalProductos += $producto['total'];
 }
 
 // Totales
@@ -180,5 +157,7 @@ $pdf->SetFont('helvetica', 'I', 8);
 $pdf->Cell(0, 8, 'Factura generada el ' . date('d/m/Y H:i:s') . ' por Sleep Better', 0, 1, 'C');
 
 // Generar el PDF
-$pdf->Output('factura_' . $factura['id'] . '_' . date('Y-m-d_H-i-s') . '.pdf', 'D');
+$pdf->Output('factura_' . ($factura['numero_factura'] ?? $factura['id']) . '_' . date('Y-m-d_H-i-s') . '.pdf', 'D');
+
+closeConnection($conn);
 ?> 

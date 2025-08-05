@@ -753,7 +753,7 @@ function mostrarModalFactura(factura) {
                                     <td style="padding: 12px; text-align: center;">${producto.cantidad}</td>
                                     <td style="padding: 12px; text-align: center;">${parseFloat(producto.descuento).toFixed(2)}%</td>
                                     <td style="padding: 12px; text-align: center;">${producto.itebis ? 'Sí' : 'No'}</td>
-                                    <td style="padding: 12px; text-align: center; font-weight: bold;">$${parseFloat(producto.total_producto).toFixed(2)}</td>
+                                    <td style="padding: 12px; text-align: center; font-weight: bold;">$${parseFloat(producto.total || 0).toFixed(2)}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
