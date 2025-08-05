@@ -16,43 +16,80 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'] ?? '';
     
     if (!empty($usuario) && !empty($password)) {
-        $stmt = $conn->prepare("SELECT id, usuario, password, nombre, email, rol FROM usuarios WHERE usuario = ? AND activo = 1");
-        $stmt->bind_param("s", $usuario);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($result->num_rows > 0) {
-            $user = $result->fetch_assoc();
+        // Verificar si estamos usando PDO (PostgreSQL) o MySQLi
+        if ($conn instanceof PDO) {
+            // Usar PDO para PostgreSQL
+            $stmt = $conn->prepare("SELECT id, nombre, email, password, rol FROM usuarios WHERE email = ?");
+            $stmt->execute([$usuario]);
+            $user = $stmt->fetch();
             
-            // Verificar password (password por defecto: 'password')
-            if (password_verify($password, $user['password']) || $password === 'password') {
-                $_SESSION['usuario_id'] = $user['id'];
-                $_SESSION['usuario_nombre'] = $user['nombre'];
-                $_SESSION['usuario_rol'] = $user['rol'];
-                $_SESSION['usuario_email'] = $user['email'];
-                
-                // Registrar login exitoso
-                registrarLogin($user['id'], $user['nombre'], true);
-                
-                header('Location: index.php');
-                exit;
+            if ($user) {
+                // Verificar password (password por defecto: 'password')
+                if (password_verify($password, $user['password']) || $password === 'password') {
+                    $_SESSION['usuario_id'] = $user['id'];
+                    $_SESSION['usuario_nombre'] = $user['nombre'];
+                    $_SESSION['usuario_rol'] = $user['rol'];
+                    $_SESSION['usuario_email'] = $user['email'];
+                    
+                    // Registrar login exitoso
+                    registrarLogin($user['id'], $user['nombre'], true);
+                    
+                    header('Location: index.php');
+                    exit;
+                } else {
+                    $error = "Contraseña incorrecta";
+                    // Registrar login fallido
+                    registrarLogin(0, $usuario, false);
+                }
             } else {
-                $error = "Contraseña incorrecta";
+                $error = "Usuario no encontrado";
                 // Registrar login fallido
                 registrarLogin(0, $usuario, false);
             }
         } else {
-            $error = "Usuario no encontrado";
-            // Registrar login fallido
-            registrarLogin(0, $usuario, false);
+            // Usar MySQLi para MySQL
+            $stmt = $conn->prepare("SELECT id, nombre, email, password, rol FROM usuarios WHERE email = ?");
+            $stmt->bind_param("s", $usuario);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            if ($result->num_rows > 0) {
+                $user = $result->fetch_assoc();
+                
+                // Verificar password (password por defecto: 'password')
+                if (password_verify($password, $user['password']) || $password === 'password') {
+                    $_SESSION['usuario_id'] = $user['id'];
+                    $_SESSION['usuario_nombre'] = $user['nombre'];
+                    $_SESSION['usuario_rol'] = $user['rol'];
+                    $_SESSION['usuario_email'] = $user['email'];
+                    
+                    // Registrar login exitoso
+                    registrarLogin($user['id'], $user['nombre'], true);
+                    
+                    header('Location: index.php');
+                    exit;
+                } else {
+                    $error = "Contraseña incorrecta";
+                    // Registrar login fallido
+                    registrarLogin(0, $usuario, false);
+                }
+            } else {
+                $error = "Usuario no encontrado";
+                // Registrar login fallido
+                registrarLogin(0, $usuario, false);
+            }
+            
+            $stmt->close();
         }
-        
-        $stmt->close();
     } else {
         $error = "Por favor complete todos los campos";
     }
     
-    $conn->close();
+    if ($conn instanceof PDO) {
+        // PDO no necesita close()
+    } else {
+        $conn->close();
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -216,11 +253,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <form method="POST" action="">
             <div class="form-group">
-                <label for="usuario">Usuario</label>
+                <label for="usuario">Email</label>
                 <div class="input-group">
                     <i class="fas fa-user"></i>
-                    <input type="text" id="usuario" name="usuario" class="form-control" 
-                           placeholder="Ingrese su usuario" required 
+                    <input type="email" id="usuario" name="usuario" class="form-control" 
+                           placeholder="Ingrese su email" required 
                            value="<?php echo isset($_POST['usuario']) ? htmlspecialchars($_POST['usuario']) : ''; ?>">
                 </div>
             </div>
@@ -241,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <div class="demo-info">
             <h4><i class="fas fa-info-circle"></i> Información de Demo</h4>
-            <p><strong>Usuario:</strong> admin</p>
+            <p><strong>Email:</strong> admin@sleepbetter.com</p>
             <p><strong>Contraseña:</strong> password</p>
             <p><strong>Rol:</strong> Administrador</p>
         </div>
