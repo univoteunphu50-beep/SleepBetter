@@ -8,4 +8,14 @@ services:
     buildCommand: docker build -t sleepbetter .
     envVars:
       - key: PORT
-        value: 10000 
+        value: 10000
+      - key: DB_HOST
+        value: localhost
+      - key: DB_PORT
+        value: 5432
+      - key: DB_NAME
+        value: sleepbetter_db
+      - key: DB_USER
+        value: postgres
+      - key: DB_PASSWORD
+        value: "" 
